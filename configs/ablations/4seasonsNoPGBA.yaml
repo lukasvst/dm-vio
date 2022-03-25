@@ -1,0 +1,10 @@
+accelerometer_noise_density: 0.10200528
+gyroscope_noise_density: 4.120916e-02
+accelerometer_random_walk: 9.8082e-04
+gyroscope_random_walk: 3.8785e-04
+integration_sigma: 0.316227
+setting_weightZeroPriorDSOInitY: 5e09
+setting_weightZeroPriorDSOInitX: 5e09
+setting_forceNoKFTranslationThresh: 0.01
+init_transitionModel: 5
+init_scalePriorAfterInit: 1.0
