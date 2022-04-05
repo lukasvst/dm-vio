@@ -286,11 +286,13 @@ void FullSystem::printResult(std::string file, bool onlyLogKFPoses, bool saveMet
         }
 
 		myfile << s->timestamp <<
-			" " << camToFirst.translation().transpose()<<
+			" " << camToFirst.translation().x() <<
+            " " << camToFirst.translation().y() <<
+            " " << camToFirst.translation().z() <<
 			" " << camToFirst.so3().unit_quaternion().x()<<
 			" " << camToFirst.so3().unit_quaternion().y()<<
 			" " << camToFirst.so3().unit_quaternion().z()<<
-			" " << camToFirst.unit_quaternion().w() << "\n";
+			" " << camToFirst.so3().unit_quaternion().w() << "\n";
 	}
 	myfile.close();
 }
