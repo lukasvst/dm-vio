@@ -46,9 +46,9 @@ Build from source with
     sudo apt install libtbb-dev
     git clone https://github.com/borglab/gtsam.git
     cd gtsam
-    git checkout a738529af9754c7a085903f90ae8559bbaa82e75
+    git checkout 4.2a6          # not strictly necessary but this is the version tested with.
     mkdir build && cd build
-    cmake -DGTSAM_POSE3_EXPMAP=ON -DGTSAM_ROT3_EXPMAP=ON -DGTSAM_USE_SYSTEM_EIGEN=ON ..
+    cmake -DGTSAM_POSE3_EXPMAP=ON -DGTSAM_ROT3_EXPMAP=ON -DGTSAM_USE_SYSTEM_EIGEN=ON -DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF ..
     make -j
     sudo make install
 

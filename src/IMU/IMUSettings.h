@@ -49,9 +49,9 @@ public:
     IMUInitSettings initSettings; // settings for the IMU initializer.
     double maxTimeBetweenInitFrames = 100000.0; // Maximum time between the first 2 frames for DSO.
 
-    // Don't add IMU data between the first two keyframes. Not relevant when the IMU initializer is active (unless
+    // Don't add IMU data between the first two keyframes. Should not be set when the IMU initializer is active (unless
     // disableVIOUntilFirstInit=false).
-    bool skipFirstKeyframe = true;
+    bool skipFirstKeyframe = false;
 
     // Weight wrt DSO.
     double setting_weightDSOCoarse = 1.0 / 1000; // DSO weight for coarse tracking.

@@ -26,7 +26,6 @@
 #include <stdio.h>
 
 #include <gtsam/nonlinear/LinearContainerFactor.h>
-#include <gtsam/base/LieVector.h>
 
 #include "util/NumType.h"
 #include "OptimizationBackend/EnergyFunctionalStructs.h"

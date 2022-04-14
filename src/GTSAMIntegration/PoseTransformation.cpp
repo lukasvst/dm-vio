@@ -214,8 +214,8 @@ dmvio::convertHAndBWithPoseTransformation(const std::pair<gtsam::Matrix, gtsam::
                                                derivativeDirection, numOpt,
                                                optPositions);
 
-    gtsam::Matrix H = gtsam::zeros(n, n);
-    gtsam::Vector b = gtsam::zeros(n, 1);
+    gtsam::Matrix H = gtsam::Matrix::Zero(n, n);
+    gtsam::Vector b = gtsam::Matrix::Zero(n, 1);
 
     // Multiply Hessian and b with the relative Jacobian.
     H = bigJ.transpose() * input.first * bigJ;
@@ -225,12 +225,12 @@ dmvio::convertHAndBWithPoseTransformation(const std::pair<gtsam::Matrix, gtsam::
 }
 
 gtsam::Matrix
-dmvio::buildRelativeJacobian(int n, const std::vector<gtsam::Key>& ordering, const std::vector<int>& dimensions,
+dmvio::buildRelativeJacobian(int n, const gtsam::FastVector<gtsam::Key>& ordering, const std::vector<int>& dimensions,
                              const gtsam::Values& values, PoseTransformation& poseTransformation,
                              const DerivativeDirection& derivativeDirection, int numOpt,
                              const std::vector<int>& optPositions)
 {
-    gtsam::Matrix bigJ = gtsam::eye(n, n);
+    gtsam::Matrix bigJ = gtsam::Matrix::Identity(n, n);
 
     poseTransformation.precomputeForDerivatives();
     int pos = 0;
@@ -301,9 +301,9 @@ dmvio::convertCoarseHToGTSAM(PoseTransformation& transform, const dso::Mat88& HI
 
     gtsam::Matrix JReal(8, 14);
     JReal.block(2, 2, 6, 12) = J;
-    JReal.block(0, 2, 2, 12) = gtsam::zeros(2, 12);
-    JReal.block(0, 0, 2, 2) = gtsam::eye(2, 2);
-    JReal.block(2, 0, 6, 2) = gtsam::zeros(6, 2);
+    JReal.block(0, 2, 2, 12) = gtsam::Matrix::Zero(2, 12);
+    JReal.block(0, 0, 2, 2) = gtsam::Matrix::Identity(2, 2);
+    JReal.block(2, 0, 6, 2) = gtsam::Matrix::Zero(6, 2);
 
     gtsam::Matrix H_full = JReal.transpose() * H * JReal;
     gtsam::Vector b_full = JReal.transpose() * b;

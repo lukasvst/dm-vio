@@ -181,10 +181,11 @@ convertHAndBWithPoseTransformation(const std::pair<gtsam::Matrix, gtsam::Vector>
 
 // Method to build the relative Jacobian used for converting H,b in convertHAndBWithPoseTransformation and
 // for the PoseTransformationFactor.
-gtsam::Matrix buildRelativeJacobian(int n, const std::vector<gtsam::Key>& ordering, const std::vector<int>& dimensions,
-                                    const gtsam::Values& values, PoseTransformation& poseTransformation,
-                                    const DerivativeDirection& derivativeDirection, int numOpt,
-                                    const std::vector<int>& optPositions);
+gtsam::Matrix
+buildRelativeJacobian(int n, const gtsam::FastVector<gtsam::Key>& ordering, const std::vector<int>& dimensions,
+                      const gtsam::Values& values, PoseTransformation& poseTransformation,
+                      const DerivativeDirection& derivativeDirection, int numOpt,
+                      const std::vector<int>& optPositions);
 
 // Converts the DSO coarse tracking Hessian to GTSAM, transforming it with the PoseTransformation.
 // The passed transformIMUToCoarse needs to provide derivatives for frameToWorld and for referenceToWorld (see TransformIMUToDSOForCoarse as an example).

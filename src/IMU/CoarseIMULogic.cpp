@@ -315,13 +315,14 @@ dmvio::CoarseIMULogic::computeCoarseUpdate(const dso::Mat88& H_in, const dso::Ve
     gtsam::Vector bComplete(nrowsGT + 2);
 
     HComplete.block(2, 2, nrowsGT, nrowsGT) = gtsamHAndB.first; // Fill correct part with the matrix from GTSAM
-    HComplete.block(0, 0, nrowsGT + 2, 2) = gtsam::zeros(nrowsGT + 2, 2); // Fill the rest with zeros.
-    HComplete.block(0, 2, 2, nrowsGT) = gtsam::zeros(2, nrowsGT);
+    HComplete.block(0, 0, nrowsGT + 2, 2) = gtsam::Matrix::Zero(nrowsGT + 2, 2); // Fill the rest with
+    // zeros.
+    HComplete.block(0, 2, 2, nrowsGT) = gtsam::Matrix::Zero(2, nrowsGT);
 
     // Add DSO part of the Hessian.
     HComplete.block(0, 0, 14, 14) += dsoHAndB.first;
 
-    bComplete.segment(0, 2) = gtsam::zeros(2, 1);
+    bComplete.segment(0, 2) = gtsam::Matrix::Zero(2, 1);
     bComplete.segment(2, nrowsGT) = -gtsamHAndB.second; // The b in GTSAM resembles -b in DSO!
     bComplete.segment(0, 14) += dsoHAndB.second;
 
@@ -338,7 +339,7 @@ dmvio::CoarseIMULogic::computeCoarseUpdate(const dso::Mat88& H_in, const dso::Ve
     if(imuSettings.fixKeyframeDuringCoarseTracking)
     {
         // GTSAM Pose contains first rotation, then translation -> only remove the translational part.
-        inc.segment(5, 3) = gtsam::zeros(3, 1);
+        inc.segment(5, 3) = gtsam::Matrix::Zero(3, 1);
     }
 
     // Apply update.

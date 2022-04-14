@@ -28,7 +28,7 @@ gtsam::Matrix dmvio::augmentedHessianFromPair(const std::pair<gtsam::Matrix, gts
 {
     int n = pair.first.rows();
 
-    gtsam::Matrix returning = gtsam::zeros(n + 1, n + 1);
+    gtsam::Matrix returning = gtsam::Matrix::Zero(n + 1, n + 1);
     returning.block(0, 0, n, n) = pair.first;
     returning.block(n, 0, 1, n) = pair.second.transpose();
     returning.block(0, n, n, 1) = pair.second;

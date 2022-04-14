@@ -24,35 +24,9 @@
 #define DMVIO_SIM3GTSAM_H
 
 
-#include <gtsam/base/DerivedValue.h>
 #include <sophus/sim3.hpp>
 #include <gtsam/base/Manifold.h>
 #include <gtsam/base/Lie.h>
-
-// Class for Sim(3)-transformations based on Sophus for GTSAM.
-class Sim3GTSAM : public gtsam::DerivedValue<Sim3GTSAM>
-{
-public:
-
-    Sim3GTSAM(const Sim3GTSAM& other);
-
-    Sim3GTSAM(double scale);
-
-    Sim3GTSAM(const Sophus::Sim3d& sim);
-
-    void print(const std::string& str) const override;
-
-    size_t dim() const override;
-
-    Sim3GTSAM retract(const gtsam::Vector& inc) const;
-
-    gtsam::Vector7 localCoordinates(const Sim3GTSAM& other) const;
-
-    bool equals(const Sim3GTSAM& other, double tol) const;
-
-    Sophus::Sim3d sim;
-private:
-};
 
 // In contrast to Sim3GTSAM this contains only the scale.
 // Could probably be made faster by not basing it on Sophus.
@@ -104,23 +78,6 @@ public:
 
 namespace gtsam
 {
-template<>
-struct traits<Sim3GTSAM>
-{
-    static void Print(const Sim3GTSAM& sim, const std::string& str = "")
-    {
-        sim.print(str);
-    }
-
-    static bool Equals(const Sim3GTSAM& val1, const Sim3GTSAM& val2, double tol = 1e-8);
-
-    static int GetDimension(const Sim3GTSAM& sim);
-
-    static gtsam::Vector7 Local(Sim3GTSAM origin, Sim3GTSAM other);
-
-    static Sim3GTSAM Retract(const Sim3GTSAM& origin, const gtsam::Vector7& v);
-};
-
 
 template<>
 struct traits<ScaleGTSAM> : public internal::LieGroup<ScaleGTSAM>
