@@ -52,6 +52,9 @@ Build from source with
     make -j
     sudo make install
 
+(Note: It seems like the keyframe operations are 2-3% slower with the new GTSAM version. To reproduce the realtime paper 
+results you should use commit `a738529af9754c7a085903f90ae8559bbaa82e75` of GTSAM).
+
 ##### OpenCV.
 Used to read, write and display images.
 Install with
