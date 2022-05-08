@@ -32,6 +32,7 @@
 #include <map>
 #include <deque>
 #include "util/SettingsUtil.h"
+#include <chrono>
 
 
 namespace dmvio
@@ -140,8 +141,8 @@ private:
 
 
 	// timings
-	struct timeval last_track;
-	struct timeval last_map;
+	std::chrono::high_resolution_clock::time_point last_track;
+	std::chrono::high_resolution_clock::time_point last_map;
 
 
 	std::deque<float> lastNTrackingMs;

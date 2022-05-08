@@ -30,7 +30,6 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
-//#include <unistd.h>
 
 #include "IOWrapper/Output3DWrapper.h"
 #include "IOWrapper/ImageDisplay.h"
@@ -77,23 +76,6 @@ using namespace dso;
 
 dmvio::IMUCalibration imuCalibration;
 dmvio::IMUSettings imuSettings;
-
-void my_exit_handler(int s)
-{
-    printf("Caught signal %d\n", s);
-    exit(1);
-}
-
-void exitThread()
-{
-    struct sigaction sigIntHandler;
-    sigIntHandler.sa_handler = my_exit_handler;
-    sigemptyset(&sigIntHandler.sa_mask);
-    sigIntHandler.sa_flags = 0;
-    sigaction(SIGINT, &sigIntHandler, NULL);
-
-    while(true) pause();
-}
 
 
 void settingsDefault(int preset)
@@ -456,8 +438,7 @@ void run(ImageFolderReader* reader, IOWrap::PangolinDSOViewer* viewer)
         }
     }
 
-    struct timeval tv_start;
-    gettimeofday(&tv_start, NULL);
+    auto tv_start = std::chrono::high_resolution_clock::now();
     clock_t started = clock();
     double sInitializerOffset = 0;
 
@@ -469,7 +450,7 @@ void run(ImageFolderReader* reader, IOWrap::PangolinDSOViewer* viewer)
     {
         if(!fullSystem->initialized)    // if not initialized: reset start time.
         {
-            gettimeofday(&tv_start, NULL);
+            tv_start = std::chrono::high_resolution_clock::now();
             started = clock();
             sInitializerOffset = timesToPlayAt[ii];
         }
@@ -487,13 +468,13 @@ void run(ImageFolderReader* reader, IOWrap::PangolinDSOViewer* viewer)
         bool skipFrame = false;
         if(playbackSpeed != 0)
         {
-            struct timeval tv_now;
-            gettimeofday(&tv_now, NULL);
-            double sSinceStart = sInitializerOffset + ((tv_now.tv_sec - tv_start.tv_sec) +
-                                                       (tv_now.tv_usec - tv_start.tv_usec) / (1000.0f * 1000.0f));
+            auto tv_now = std::chrono::high_resolution_clock::now();
+            double sSinceStart = sInitializerOffset + std::chrono::duration<double, std::ratio<1>>(tv_now.time_since_epoch()).count();  // in seconds
 
-            if(sSinceStart < timesToPlayAt[ii])
-                usleep((int) ((timesToPlayAt[ii] - sSinceStart) * 1000 * 1000));
+            if (sSinceStart < timesToPlayAt[ii])
+            {
+                std::this_thread::sleep_for(std::chrono::duration<double, std::ratio<1>>(timesToPlayAt[ii] - sSinceStart));
+            }
             else if(sSinceStart > timesToPlayAt[ii] + 0.5 + 0.1 * (ii % 2))
             {
                 printf("SKIPFRAME %d (play at %f, now it is %f)!\n", ii, timesToPlayAt[ii], sSinceStart);
@@ -567,8 +548,7 @@ void run(ImageFolderReader* reader, IOWrap::PangolinDSOViewer* viewer)
     }
     fullSystem->blockUntilMappingIsFinished();
     clock_t ended = clock();
-    struct timeval tv_end;
-    gettimeofday(&tv_end, NULL);
+    auto tv_end = std::chrono::high_resolution_clock::now();
 
 
     fullSystem->printResult(imuSettings.resultsPrefix + "result.txt", false, false, true);
@@ -581,8 +561,7 @@ void run(ImageFolderReader* reader, IOWrap::PangolinDSOViewer* viewer)
     int numFramesProcessed = abs(idsToPlay[0] - idsToPlay.back());
     double numSecondsProcessed = fabs(reader->getTimestamp(idsToPlay[0]) - reader->getTimestamp(idsToPlay.back()));
     double MilliSecondsTakenSingle = 1000.0f * (ended - started) / (float) (CLOCKS_PER_SEC);
-    double MilliSecondsTakenMT = sInitializerOffset + ((tv_end.tv_sec - tv_start.tv_sec) * 1000.0f +
-                                                       (tv_end.tv_usec - tv_start.tv_usec) / 1000.0f);
+    double MilliSecondsTakenMT = sInitializerOffset + std::chrono::duration<double, std::milli>(tv_end.time_since_epoch()).count();
     printf("\n======================"
            "\n%d Frames (%.1f fps)"
            "\n%.2fms per frame (single core); "
@@ -601,7 +580,7 @@ void run(ImageFolderReader* reader, IOWrap::PangolinDSOViewer* viewer)
         std::ofstream tmlog;
         tmlog.open("logs/time.txt", std::ios::trunc | std::ios::out);
         tmlog << 1000.0f * (ended - started) / (float) (CLOCKS_PER_SEC * reader->getNumImages()) << " "
-              << ((tv_end.tv_sec - tv_start.tv_sec) * 1000.0f + (tv_end.tv_usec - tv_start.tv_usec) / 1000.0f) /
+              << std::chrono::duration<double, std::milli>(tv_end - tv_start).count() /
                  (float) reader->getNumImages() << "\n";
         tmlog.flush();
         tmlog.close();
@@ -661,9 +640,6 @@ int main(int argc, char** argv)
         settingsUtil->printAllSettings(settingsStream);
     }
 
-
-    // hook crtl+C.
-    boost::thread exThread = boost::thread(exitThread);
 
     ImageFolderReader* reader = new ImageFolderReader(source, calib, gammaCalib, vignette, use16Bit);
     reader->loadIMUData(imuFile);

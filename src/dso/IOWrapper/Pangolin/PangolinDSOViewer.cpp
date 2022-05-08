@@ -517,9 +517,8 @@ void PangolinDSOViewer::publishCamPose(FrameShell* frame,
     if(disableAllDisplay) return;
 
 	boost::unique_lock<boost::mutex> lk(model3DMutex);
-	struct timeval time_now;
-	gettimeofday(&time_now, NULL);
-	lastNTrackingMs.push_back(((time_now.tv_sec-last_track.tv_sec)*1000.0f + (time_now.tv_usec-last_track.tv_usec)/1000.0f));
+	auto time_now = std::chrono::high_resolution_clock::now();
+	lastNTrackingMs.push_back(std::chrono::duration<float, std::milli>(time_now.time_since_epoch()).count());
 	if(lastNTrackingMs.size() > 10) lastNTrackingMs.pop_front();
 	last_track = time_now;
 
@@ -560,9 +559,8 @@ void PangolinDSOViewer::pushDepthImage(MinimalImageB3* image)
 
 	boost::unique_lock<boost::mutex> lk(openImagesMutex);
 
-	struct timeval time_now;
-	gettimeofday(&time_now, NULL);
-	lastNMappingMs.push_back(((time_now.tv_sec-last_map.tv_sec)*1000.0f + (time_now.tv_usec-last_map.tv_usec)/1000.0f));
+	auto time_now = std::chrono::high_resolution_clock::now();
+	lastNMappingMs.push_back(std::chrono::duration<float, std::milli>(time_now.time_since_epoch()).count());
 	if(lastNMappingMs.size() > 10) lastNMappingMs.pop_front();
 	last_map = time_now;
 

@@ -44,7 +44,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_definitions("-DENABLE_SSE")
 
 if (MSVC)
-	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MP")
+	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MP /bigobj")
 	add_definitions("-DNOMINMAX")
 	add_definitions("-DLEAN_AND_MEAN")
 else()
