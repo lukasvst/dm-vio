@@ -30,7 +30,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
+//#include <unistd.h>
 
 #include "IOWrapper/Output3DWrapper.h"
 #include "IOWrapper/ImageDisplay.h"
@@ -60,9 +60,9 @@ std::string source = "";
 std::string calib = "";
 std::string imuFile = "";
 std::string imuCalibFile = "";
-bool reverse = false;
+bool g_reverse = false;
 int start = 0;
-int end = 100000;
+int g_end = 100000;
 float playbackSpeed = 0;    // 0 for linearize (play as fast as possible, while sequentializing tracking & mapping). otherwise, factor on timestamps.
 bool preload = false;
 int maxPreloadImages = 0; // If set we only preload if there are less images to be loade.
@@ -201,7 +201,7 @@ void parseArgument(char* arg, dmvio::SettingsUtil& settingsUtil)
     {
         if(option == 1)
         {
-            reverse = true;
+            g_reverse = true;
             printf("REVERSE!\n");
         }
         return;
@@ -232,7 +232,7 @@ void parseArgument(char* arg, dmvio::SettingsUtil& settingsUtil)
     }
     if(1 == sscanf(arg, "end=%d", &option))
     {
-        end = option;
+        g_end = option;
         printf("END AT %d!\n", start);
         return;
     }
@@ -381,13 +381,13 @@ void run(ImageFolderReader* reader, IOWrap::PangolinDSOViewer* viewer)
 
 
     int lstart = start;
-    int lend = end;
+    int lend = g_end;
     int linc = 1;
-    if(reverse)
+    if(g_reverse)
     {
         assert(!setting_useIMU); // Reverse is not supported with IMU data at the moment!
         printf("REVERSE!!!!");
-        lstart = end - 1;
+        lstart = g_end - 1;
         if(lstart >= reader->getNumImages())
             lstart = reader->getNumImages() - 1;
         lend = start;

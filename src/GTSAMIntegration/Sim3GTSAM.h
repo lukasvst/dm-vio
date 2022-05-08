@@ -24,13 +24,13 @@
 #define DMVIO_SIM3GTSAM_H
 
 
-#include <gtsam/base/DerivedValue.h>
+#include <gtsam/base/Value.h>
 #include <sophus/sim3.hpp>
 #include <gtsam/base/Manifold.h>
 #include <gtsam/base/Lie.h>
 
 // Class for Sim(3)-transformations based on Sophus for GTSAM.
-class Sim3GTSAM : public gtsam::DerivedValue<Sim3GTSAM>
+class Sim3GTSAM
 {
 public:
 
@@ -40,9 +40,9 @@ public:
 
     Sim3GTSAM(const Sophus::Sim3d& sim);
 
-    void print(const std::string& str) const override;
+    void print(const std::string& str) const;
 
-    size_t dim() const override;
+    size_t dim() const;
 
     Sim3GTSAM retract(const gtsam::Vector& inc) const;
 

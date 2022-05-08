@@ -27,7 +27,7 @@
 #include "OptimizationBackend/EnergyFunctionalStructs.h"
 #include <iostream>
 
-#if !defined(__SSE3__) && !defined(__SSE2__) && !defined(__SSE1__)
+#if !defined(__SSE3__) && !defined(__SSE2__) && !defined(__SSE1__) && !defined(_WIN64)
 #include "SSE2NEON.h"
 #endif
 

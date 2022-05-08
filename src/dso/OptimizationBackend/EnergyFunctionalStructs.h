@@ -34,7 +34,7 @@ namespace dso
 {
 
 class PointFrameResidual;
-class CalibHessian;
+struct CalibHessian;
 class FrameHessian;
 class PointHessian;
 

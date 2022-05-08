@@ -34,6 +34,10 @@
 #include "util/globalFuncs.h"
 #include "OptimizationBackend/RawResidualJacobian.h"
 
+#ifdef IN
+#undef IN
+#endif
+
 namespace dso
 {
 class PointHessian;

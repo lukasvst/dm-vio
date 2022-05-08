@@ -40,7 +40,6 @@
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/nonlinear/LinearContainerFactor.h>
 
-#include <sophus/sophus.hpp>
 #include <sophus/se3.hpp>
 
 #include "dso/util/NumType.h"
@@ -83,7 +82,7 @@ public:
     // Called to add IMU data for the coarse tracking (and the IMU initializer).
     // Adds a new frame with IMU data to the coarse factor graph, marginalizes old variables, and returns an estimate
     // for the relative pose of the newly added frame.
-    Sophus::SE3 addIMUData(const IMUData& imuData,
+    Sophus::SE3d addIMUData(const IMUData& imuData,
                            int frameId, double frameTimestamp, bool firstFrameAfterKFChange,
                            int lastFrameId, bool onlyForHint = false);
 
@@ -95,7 +94,7 @@ public:
     void resetBAPreintegration();
 
     // Passes the new coarse tracking pose.
-    void updateCoarsePose(const Sophus::SE3& pose);
+    void updateCoarsePose(const Sophus::SE3d& pose);
 
     // This method integrates the CoarseTracker optimization with GTSAM. It is called in each iteration, and
     // will compute the increment for the optimization iteration.
@@ -103,7 +102,7 @@ public:
     // increment of the affine lightning transforms after the method call, incNorm is the norm of the increment.
     // b contains the following parameters: 3 for the rotation ref_to_frame, 3 for the translation ref_to_frame, and
     // 2 for affine lightning parameters.
-    Sophus::SE3 computeCoarseUpdate(const dso::Mat88& H, const dso::Vec8& b, float extrapFac, float lambda,
+    Sophus::SE3d computeCoarseUpdate(const dso::Mat88& H, const dso::Vec8& b, float extrapFac, float lambda,
                                     double& incA, double& incB, double& incNorm);
 
     // Apply the update computed by the last call of computeCoarseUpdate.
@@ -145,7 +144,7 @@ public:
     // thread marginalization and post BA stuff -> finishKeyframeOperations()
     void finishKeyframeOperations(int keyframeId);
 
-    Sophus::SE3 TS_cam_imu;
+    Sophus::SE3d TS_cam_imu;
 
     // Sets groundtruth data for a frame for printing out information. Should only be used in non-rt mode as it currently
     // does not handle multiple threads correctly.

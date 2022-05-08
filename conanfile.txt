@@ -1,0 +1,15 @@
+[requires]
+eigen/3.4.0
+boost/1.79.0
+yaml-cpp/0.7.0
+gtsam/4.0.3
+opencv/4.5.5
+sophus/1.0.0
+
+[generators]
+cmake_find_package
+
+[options]
+gtsam:pose3_expmap=True
+gtsam:rot3_expmap=True
+gtsam:pose3_expmap=True

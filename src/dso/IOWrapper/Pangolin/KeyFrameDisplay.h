@@ -79,7 +79,7 @@ public:
 	// keeping some additional information so we can render it differently.
 	void setFromF(FrameShell* fs, CalibHessian* HCalib);
 
-	void setFromPose(const Sophus::SE3& pose, CalibHessian* HCalib);
+	void setFromPose(const Sophus::SE3d& pose, CalibHessian* HCalib);
 
 	// copies & filters internal data to GL buffer for rendering. if nothing to do: does nothing.
 	bool refreshPC(bool canRefresh, float scaledTH, float absTH, int mode, float minBS, int sparsity);

@@ -580,7 +580,7 @@ void PangolinDSOViewer::publishTransformDSOToIMU(const dmvio::TransformDSOToIMU&
             std::make_shared<bool>(false), std::make_shared<bool>(false));
 }
 
-void PangolinDSOViewer::addGTCamPose(const Sophus::SE3& gtPose)
+void PangolinDSOViewer::addGTCamPose(const Sophus::SE3d& gtPose)
 {
 	boost::unique_lock<boost::mutex> lk(model3DMutex);
 

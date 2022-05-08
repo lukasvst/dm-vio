@@ -34,7 +34,7 @@
 
 #include <sstream>
 #include <fstream>
-#include <dirent.h>
+//#include <dirent.h>
 #include <algorithm>
 
 #include "util/Undistort.h"

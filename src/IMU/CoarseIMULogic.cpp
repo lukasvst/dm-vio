@@ -370,7 +370,7 @@ Sophus::SE3d dmvio::CoarseIMULogic::getCoarseKFPose()
     return Sophus::SE3d(coarseValues->at<gtsam::Pose3>(gtsam::Symbol('p', currentKeyframeId)).matrix());
 }
 
-void dmvio::CoarseIMULogic::updateCoarsePose(const Sophus::SE3& refToFrame)
+void dmvio::CoarseIMULogic::updateCoarsePose(const Sophus::SE3d& refToFrame)
 {
     // GTSAM expects currentImu to world, we passed referenceCamera to currentCamera.
     PoseTransformation& transformIMUToCoarse = *transformIMUToDSOForCoarse;

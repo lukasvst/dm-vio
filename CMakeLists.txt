@@ -1,24 +1,20 @@
 SET(PROJECT_NAME DMVIO)
 
 PROJECT(${PROJECT_NAME})
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
-
-IF(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE RelWithDebInfo)
-ENDIF()
-set(BUILD_TYPE RelWithDebInfo)
 
 set(EXECUTABLE_OUTPUT_PATH bin)
 set(LIBRARY_OUTPUT_PATH lib)
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # required libraries
-find_package(SuiteParse REQUIRED)
+#find_package(SuiteParse REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost COMPONENTS system thread filesystem chrono serialization date_time timer)
 find_package(GTSAM REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(Sophus REQUIRED)
+
 
 IF(${Boost_VERSION} GREATER_EQUAL 106500)
     message("Building with stacktrace support.")
@@ -40,23 +36,31 @@ ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 
 # flags
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 add_definitions("-DENABLE_SSE")
-set(CMAKE_CXX_FLAGS
-    "${SSE_FLAGS} -std=c++14"
-)
-set(CMAKE_CXX_FLAGS_DEBUG
-	"-O2 -g -fno-omit-frame-pointer -DEIGEN_INITIALIZE_MATRICES_WITH_NAN -DDEBUG ${STACKTRACE_DEFINES}"
-)
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
-	"-O3 -g -fno-omit-frame-pointer ${STACKTRACE_DEFINES}"
-)
-set(CMAKE_CXX_FLAGS_RELEASE
-	"-O3 -DNDEBUG"
-)
 
 if (MSVC)
-     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
-endif (MSVC)
+	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MP")
+	add_definitions("-DNOMINMAX")
+	add_definitions("-DLEAN_AND_MEAN")
+else()
+	set(CMAKE_CXX_FLAGS
+		"${SSE_FLAGS}"
+	)
+	set(CMAKE_CXX_FLAGS_DEBUG
+		"-O2 -g -fno-omit-frame-pointer -DEIGEN_INITIALIZE_MATRICES_WITH_NAN -DDEBUG ${STACKTRACE_DEFINES}"
+	)
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
+		"-O3 -g -fno-omit-frame-pointer ${STACKTRACE_DEFINES}"
+	)
+	set(CMAKE_CXX_FLAGS_RELEASE
+		"-O3 -DNDEBUG"
+	)
+endif()
 
 set(DSO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src/dso)
 
@@ -111,16 +115,10 @@ set(dmvio_SOURCE_FILES
 		src/GTSAMIntegration/AugmentedScatter.cpp
 		)
 
-
 include_directories(
   ${PROJECT_SOURCE_DIR}/src
   ${PROJECT_SOURCE_DIR}/src/dso
-  ${PROJECT_SOURCE_DIR}/thirdparty/Sophus
-  ${PROJECT_SOURCE_DIR}/thirdparty/sse2neon
-  ${EIGEN3_INCLUDE_DIR}
-  ${GTSAM_INCLUDE_DIR}
 ) 
-
 
 # decide if we have pangolin
 if (Pangolin_FOUND)
@@ -167,7 +165,14 @@ endif()
 # compile main library.
 include_directories( ${CSPARSE_INCLUDE_DIR} ${CHOLMOD_INCLUDE_DIR} ${YAML_CPP_INCLUDE_DIR})
 add_library(dmvio ${dso_SOURCE_FILES} ${dmvio_SOURCE_FILES} ${dso_opencv_SOURCE_FILES} ${dso_pangolin_SOURCE_FILES})
-
+target_link_libraries(dmvio PUBLIC
+	Eigen3::Eigen
+	GTSAM::gtsam
+	Boost::system Boost::thread Boost::filesystem Boost::chrono Boost::serialization Boost::date_time Boost::timer
+	yaml-cpp::yaml-cpp
+	Sophus::Sophus
+	opencv::opencv_highgui
+	)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin") # OSX
     set(BOOST_THREAD_LIBRARY boost_thread-mt)
@@ -180,8 +185,11 @@ endif()
 if (OpenCV_FOUND AND Pangolin_FOUND)
 	message("--- compiling dmvio_dataset.")
 	add_executable(dmvio_dataset ${PROJECT_SOURCE_DIR}/src/main_dmvio_dataset.cpp)
-	set(DMVIO_LINKED_LIBRARIES boost_system cxsparse ${BOOST_THREAD_LIBRARY} ${LIBZIP_LIBRARY} ${Pangolin_LIBRARIES} ${OpenCV_LIBS} gtsam ${YAML_CPP_LIBRARIES} ${STACKTRACE_LIBRARIES})
-    target_link_libraries(dmvio_dataset dmvio ${DMVIO_LINKED_LIBRARIES})
+	target_link_libraries(dmvio_dataset
+		dmvio
+		cxsparse ${STACKTRACE_LIBRARIES} ${LIBZIP_LIBRARY}
+		${Pangolin_LIBRARIES}
+		)
 else()
 	message("--- not building dmvio_dataset, since either don't have openCV or Pangolin.")
 endif()

@@ -28,7 +28,7 @@
 #include "FullSystem/HessianBlocks.h"
 #include "FullSystem/Residuals.h"
 
-#if !defined(__SSE3__) && !defined(__SSE2__) && !defined(__SSE1__)
+#if !defined(__SSE3__) && !defined(__SSE2__) && !defined(__SSE1__) && !defined(_WIN64)
 #include "SSE2NEON.h"
 #endif
 

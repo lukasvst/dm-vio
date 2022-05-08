@@ -80,7 +80,7 @@ public:
     virtual void publishKeyframes( std::vector<FrameHessian*> &frames, bool final, CalibHessian* HCalib) override;
     virtual void publishCamPose(FrameShell* frame, CalibHessian* HCalib) override;
 
-    void addGTCamPose(const Sophus::SE3& gtPose);
+    void addGTCamPose(const Sophus::SE3d& gtPose);
 
     virtual void pushLiveFrame(FrameHessian* image) override;
     virtual void pushDepthImage(MinimalImageB3* image) override;
