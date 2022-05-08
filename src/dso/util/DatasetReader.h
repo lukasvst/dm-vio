@@ -35,6 +35,7 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <filesystem>
 
 #include "util/Undistort.h"
 #include "IOWrapper/ImageRW.h"
@@ -51,21 +52,19 @@ using namespace dso;
 
 inline int getdir (std::string dir, std::vector<std::string> &files)
 {
-    DIR *dp;
-    struct dirent *dirp;
-    if((dp  = opendir(dir.c_str())) == NULL)
-    {
-        return -1;
-    }
+	const std::filesystem::path dir_path{ dir };
+	for (auto const& dir_entry : std::filesystem::directory_iterator{ dir_path })
+	{
+		std::string name = dir_entry.path().filename().string();
 
-    while ((dirp = readdir(dp)) != NULL) {
-    	std::string name = std::string(dirp->d_name);
+		if (name != "." && name != "..")
+			files.push_back(name);
+	}
 
-    	if(name != "." && name != "..")
-    		files.push_back(name);
-    }
-    closedir(dp);
-
+	if (files.empty())
+	{
+		return -1;
+	}
 
     std::sort(files.begin(), files.end());
 
