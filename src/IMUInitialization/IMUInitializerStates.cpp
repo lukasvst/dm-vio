@@ -283,7 +283,7 @@ dmvio::PGBAState::postBAInit(int keyframeId, gtsam::NonlinearFactor::shared_ptr 
             logic.pgba->optimizationResultNotUsed();
             return std::move(pair.second);
         }
-    }catch(gtsam::IndeterminantLinearSystemException& exc)
+    }catch(gtsam::IndeterminantLinearSystemException&)
     {
         std::cout << "ERROR during PGBA!" << std::endl;
         logic.pgba->optimizationResultNotUsed();
@@ -364,7 +364,7 @@ void RealtimePGBAState::threadRun()
         }
 
         newStatePair = transitionModel.pgbaOptimized(optimizedValues, variances);
-    }catch(gtsam::IndeterminantLinearSystemException& exc)
+    }catch(gtsam::IndeterminantLinearSystemException&)
     {
         std::cout << "ERROR during PGBA!" << std::endl;
         std::unique_ptr<gtsam::Values> emptyVals;

@@ -102,7 +102,8 @@ public:
     memset(SSEData,0, sizeof(float)*4*1);
     memset(SSEData1k,0, sizeof(float)*4*1);
     memset(SSEData1m,0, sizeof(float)*4*1);
-    num = numIn1 = numIn1k = numIn1m = 0;
+	num = 0;
+	numIn1 = numIn1k = numIn1m = 0;
   }
 
   inline void finish()

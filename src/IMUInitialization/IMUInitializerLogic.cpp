@@ -122,7 +122,7 @@ dmvio::IMUInitVariances::IMUInitVariances(const gtsam::Marginals& marginals, gts
         gtsam::Matrix scaleCovariance = marginals.marginalCovariance(scaleKey);
         scaleVariance = scaleCovariance(0, 0);
         biasCovariance = marginals.marginalCovariance(biasKey);
-    }catch(gtsam::IndeterminantLinearSystemException& exc)
+    }catch(gtsam::IndeterminantLinearSystemException&)
     {
         indetermined = true;
     }

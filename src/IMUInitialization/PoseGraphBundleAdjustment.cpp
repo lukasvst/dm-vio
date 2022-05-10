@@ -385,7 +385,7 @@ gtsam::NonlinearFactor::shared_ptr dmvio::compensateNegativeEnergy(NonlinearFact
         GaussNewtonOptimizer optim(graph, values);
         optim.optimize();
         optimError = optim.error();
-    }catch(IndeterminantLinearSystemException& exc)
+    }catch(IndeterminantLinearSystemException&)
     {
         std::cout << "WARNING: INDETERMINED LINEAR SYSTEM EXCEPTION" << std::endl;
 

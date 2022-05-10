@@ -40,6 +40,7 @@ dmvio::createTransitionModel(InitTransitionMode mode, IMUInitializerLogic& logic
         default:
             std::cout << "ERROR: Trying to use non-implemented transition model!" << std::endl;
             assert(false);
+            return {};
     }
 }
 

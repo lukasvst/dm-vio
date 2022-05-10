@@ -28,7 +28,7 @@
 
  
 #include "util/NumType.h"
-#include "vector"
+#include <vector>
 #include <math.h>
 #include "util/settings.h"
 #include "OptimizationBackend/MatrixAccumulators.h"
@@ -39,9 +39,6 @@
 
 namespace dso
 {
-struct CalibHessian;
-struct FrameHessian;
-struct PointFrameResidual;
 
 class CoarseTracker {
 public:
