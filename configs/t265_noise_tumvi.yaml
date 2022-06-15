@@ -1,0 +1,20 @@
+accelerometer_noise_density: 0.224
+gyroscope_noise_density: 0.01280
+accelerometer_random_walk: 0.0430
+gyroscope_random_walk: 0.00110
+integration_sigma: 0.316227
+maxSkipFramesVisualOnlyMode: 1      # This many frames can be skipped at a time while in visual-only mode.
+maxSkipFramesVisualInertial: 2      # This many frames can be skipped at a time while in visual-inertial mode.
+skipFramesVisualOnlyDelay: 30       # After visual initializer finished, wait this amount of frames before switching to the visualOnly threshold. This is useful because during the first frames the system might be less stable than later.
+minQueueSizeForSkipping: 2          # Don't skip frames if the image queue is smaller than this.
+maxTimeBetweenInitFrames: 1.0       # Reset the visual initializer if this time has passed between the first and last frame.
+init_pgba_skipFirstKFs: 1
+init_requestFullResetNormalizedErrorThreshold: 0.1  # If the error after the CoarseIMUInit is larger than this we assume the visual system failed and reset the full system.
+normalizeCamSize: 0.2               # Sets the size of the displayed camera (normalized with the scale obtained from IMU data).
+# With the following settings, VIO is initialized a bit earlier (default values in comment behind it).
+# To adjust these settings you can read the CoarseIMUInit scale and variance printed out by the system and see with which variance it typically outputs a reasonable scale.
+init_coarseScaleUncertaintyThresh: 5 # 1.0
+init_pgba_scaleUncertaintyThresh: 5 # 1.0
+init_pgba_reinitScaleUncertaintyThresh: 1 # 0.5
+# If you are sure that no clouds will cover a large part of the image you can include points with any depth by enabling the following line.
+# setting_minIdepth: 0.0

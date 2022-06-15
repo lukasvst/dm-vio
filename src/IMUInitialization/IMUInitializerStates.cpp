@@ -159,8 +159,6 @@ void dmvio::RealtimeCoarseIMUInitState::threadRun()
     cachedData.clear();
     if(!newState) status = NOT_RUNNING;
     logic.stateChanger.setState(std::move(newState));
-
-    std::cout << "Finished thread" << std::endl;
 }
 
 void dmvio::RealtimeCoarseIMUInitState::print(std::ostream& str) const

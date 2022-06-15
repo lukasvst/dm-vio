@@ -116,10 +116,11 @@ public:
     IMUCalibration();
 
     IMUCalibration(std::string settingsFilename);
-
+    IMUCalibration(const Sophus::SE3d& tCamImu);
     void loadFromFile(std::string settingsFilename);
+    void saveToFile(std::string filename); // Save T_cam_imu to as a camchain.yaml.
 
-    // The noise values are registered as settings so they can also be set from commandline and from the settings yaml.
+    // The noise values are registered as settings so they can be set from commandline and from the settings yaml.
     void registerArgs(dmvio::SettingsUtil& set);
 
     Sophus::SE3d T_cam_imu;

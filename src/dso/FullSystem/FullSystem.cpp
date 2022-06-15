@@ -920,6 +920,8 @@ void FullSystem::addActiveFrame(ImageAndExposure* image, int id, dmvio::IMUData*
             {
                 gravityInit.addMeasure(*imuData, Sophus::SE3d());
             }
+            for(IOWrap::Output3DWrapper* ow : outputWrapper)
+                ow->publishSystemStatus(dmvio::VISUAL_INIT);
         }else
         {
             dmvio::TimeMeasurement initMeasure("InitializerOtherFrames");
@@ -942,6 +944,8 @@ void FullSystem::addActiveFrame(ImageAndExposure* image, int id, dmvio::IMUData*
                 }
                 lock.unlock();
                 initMeasure.end();
+                for(IOWrap::Output3DWrapper* ow : outputWrapper)
+                    ow->publishSystemStatus(dmvio::VISUAL_ONLY);
                 deliverTrackedFrame(fh, true);
             } else
             {
@@ -952,26 +956,8 @@ void FullSystem::addActiveFrame(ImageAndExposure* image, int id, dmvio::IMUData*
                 std::cout << "InitTimeBetweenFrames: " << timeBetweenFrames << std::endl;
                 if(timeBetweenFrames > imuIntegration.getImuSettings().maxTimeBetweenInitFrames)
                 {
-                    // Make this the first frame.
-                    // delete old first frame
-                    coarseInitializer->firstFrame->shell->poseValid = false;
-                    delete coarseInitializer->firstFrame;
-
-                    // Clear frame history
-                    allFrameHistory.pop_back(); // Pop the current shell as we do not want to delete it.
-                    for(auto&& shell : allFrameHistory)
-                    {
-                        delete shell;
-                    }
-                    allFrameHistory.clear();
-
-                    // Set this to the first id again.
-                    shell->marginalizedAt = shell->id = allFrameHistory.size();
-                    allFrameHistory.push_back(shell);
-
-                    if(setting_useIMU) imuIntegration.resetBAPreintegration();
-
-                    coarseInitializer->setFirst(&Hcalib, fh);
+                    // Do full reset so that the next frame becomes the first initializer frame.
+                    setting_fullResetRequested = true;
                 }else
                 {
                     fh->shell->poseValid = false;
@@ -998,9 +984,13 @@ void FullSystem::addActiveFrame(ImageAndExposure* image, int id, dmvio::IMUData*
 			if(dso::setting_useIMU)
 			{
 			    // BA for new keyframe has finished and we have a new tracking reference.
-				std::cout << "New ref frame id: " << coarseTracker->refFrameID << " prepared keyframe id: " << imuIntegration.getPreparedKeyframe() << std::endl;
+                if(!setting_debugout_runquiet)
+                {
+                    std::cout << "New ref frame id: " << coarseTracker->refFrameID << " prepared keyframe id: "
+                              << imuIntegration.getPreparedKeyframe() << std::endl;
+                }
 
-				lastFrameId = coarseTracker->refFrameID;
+                lastFrameId = coarseTracker->refFrameID;
 
 				assert(coarseTracker->refFrameID == imuIntegration.getPreparedKeyframe());
 				SE3 lastRefToNewRef = imuIntegration.initCoarseGraph();
@@ -1065,7 +1055,7 @@ void FullSystem::addActiveFrame(ImageAndExposure* image, int id, dmvio::IMUData*
                     (setting_maxTimeBetweenKeyframes > 0 && timeSinceLastKeyframe > setting_maxTimeBetweenKeyframes) ||
                     forceKF;
 
-			if(needToMakeKF)
+			if(needToMakeKF && !setting_debugout_runquiet)
             {
                 std::cout << "Time since last keyframe: " << timeSinceLastKeyframe << std::endl;
             }
@@ -1137,12 +1127,18 @@ void FullSystem::deliverTrackedFrame(FrameHessian* fh, bool needKF)
 
 	bool alreadyPreparedKF = setting_useIMU && imuIntegration.getPreparedKeyframe() != -1 && !linearizeOperation;
 
-	std::cout << "Frame history size: " << allFrameHistory.size() << std::endl;
+    if(!setting_debugout_runquiet)
+    {
+        std::cout << "Frame history size: " << allFrameHistory.size() << std::endl;
+    }
     if((needKF || (!secondKeyframeDone && !linearizeOperation)) && setting_useIMU && !alreadyPreparedKF)
     {
         // prepareKeyframe tells the IMU-Integration that this frame will become a keyframe. -> don' marginalize it during addIMUData.
         // Also resets the IMU preintegration for the BA.
-		std::cout << "Preparing keyframe: " << fh->shell->id <<  std::endl;
+        if(!setting_debugout_runquiet)
+        {
+            std::cout << "Preparing keyframe: " << fh->shell->id << std::endl;
+        }
         imuIntegration.prepareKeyframe(fh->shell->id);
 
 		if(!needKF)
@@ -1151,8 +1147,11 @@ void FullSystem::deliverTrackedFrame(FrameHessian* fh, bool needKF)
 		}
     }else
 	{
-		std::cout << "Creating a non-keyframe: " << fh->shell->id << std::endl;
-	}
+        if(!setting_debugout_runquiet)
+        {
+            std::cout << "Creating a non-keyframe: " << fh->shell->id << std::endl;
+        }
+    }
 
 	if(linearizeOperation)
 	{
@@ -1227,9 +1226,12 @@ void FullSystem::mappingLoop()
 		FrameHessian* fh = unmappedTrackedFrames.front();
 		unmappedTrackedFrames.pop_front();
 
-		std::cout << "Current mapping id: " << fh->shell->id << " create KF after: " << needNewKFAfter << std::endl;
+        if(!setting_debugout_runquiet)
+        {
+            std::cout << "Current mapping id: " << fh->shell->id << " create KF after: " << needNewKFAfter << std::endl;
+        }
 
-		// guaranteed to make a KF for the very first two tracked frames.
+        // guaranteed to make a KF for the very first two tracked frames.
 		if(allKeyFramesHistory.size() <= 2)
 		{
             if(setting_useIMU)
@@ -1252,8 +1254,11 @@ void FullSystem::mappingLoop()
 
 			if(setting_useIMU && needNewKFAfter == fh->shell->id)
 			{
-				std::cout << "WARNING: Prepared keyframe got skipped!" << std::endl;
-				imuIntegration.skipPreparedKeyframe();
+                if(!dso::setting_debugout_runquiet)
+                {
+                    std::cout << "WARNING: Prepared keyframe got skipped!" << std::endl;
+                }
+                imuIntegration.skipPreparedKeyframe();
 				assert(false);
 			}
 
@@ -1338,8 +1343,11 @@ void FullSystem::makeKeyFrame( FrameHessian* fh)
 		fh->setEvalPT_scaled(fh->shell->camToWorld.inverse(),fh->shell->aff_g2l);
 		int prevKFId = fh->shell->trackingRef->id;
 		int framesBetweenKFs = fh->shell->id - prevKFId - 1;
-		std::cout << "Frames between KFs: " << framesBetweenKFs << std::endl;
-	}
+        if(!setting_debugout_runquiet)
+        {
+            std::cout << "Frames between KFs: " << framesBetweenKFs << std::endl;
+        }
+    }
 
 	traceNewCoarse(fh);
 
@@ -1434,13 +1442,14 @@ void FullSystem::makeKeyFrame( FrameHessian* fh)
 	    imuIntegration.postOptimization(fh->shell->id);
     }
 
+    bool imuReady = false;
 	{
         dmvio::TimeMeasurement timeMeasurement("makeKeyframeChangeTrackingRef");
 		boost::unique_lock<boost::mutex> crlock(coarseTrackerSwapMutex);
 
         if(setting_useIMU)
         {
-            imuIntegration.finishKeyframeOptimization(fh->shell->id);
+            imuReady = imuIntegration.finishKeyframeOptimization(fh->shell->id);
         }
 
         coarseTracker_forNewKF->makeK(&Hcalib);
@@ -1457,12 +1466,19 @@ void FullSystem::makeKeyFrame( FrameHessian* fh)
 
     for(auto* ow : outputWrapper)
     {
+        if(imuReady && !imuUsedBefore)
+        {
+            // Update state if this is the first time after IMU init.
+            // VIO is now initialized the next published scale will be useful.
+            ow->publishSystemStatus(dmvio::VISUAL_INERTIAL);
+        }
         ow->publishTransformDSOToIMU(imuIntegration.getTransformDSOToIMU());
     }
+    imuUsedBefore = imuReady;
 
 
 
-	// =========================== (Activate-)Marginalize Points =========================
+    // =========================== (Activate-)Marginalize Points =========================
     dmvio::TimeMeasurement timeMeasurementMarginalizePoints("marginalizeAndRemovePoints");
 	flagPointsForRemoval();
 	ef->dropPointsF();

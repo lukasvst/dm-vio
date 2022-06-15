@@ -41,8 +41,9 @@ namespace IOWrap
 
 
 
-PangolinDSOViewer::PangolinDSOViewer(int w, int h, bool startRunThread, std::shared_ptr<dmvio::SettingsUtil> settingsUtilPassed)
-        : HCalib(0), settingsUtil(std::move(settingsUtilPassed))
+PangolinDSOViewer::PangolinDSOViewer(int w, int h, bool startRunThread, std::shared_ptr<dmvio::SettingsUtil>
+        settingsUtilPassed, std::shared_ptr<double> normalizeCamSize)
+        : HCalib(0), settingsUtil(std::move(settingsUtilPassed)), normalizeCamSize(normalizeCamSize)
 {
 	this->w = w;
 	this->h = h;
@@ -167,6 +168,8 @@ void PangolinDSOViewer::run()
 	pangolin::Var<double> settings_trackFps("ui.Track fps",0,0,0,false);
 	pangolin::Var<double> settings_mapFps("ui.KF fps",0,0,0,false);
 
+    pangolin::Var<double> settings_Scale("ui.Scale", 1, 0, 0, false);
+    pangolin::Var<std::string> setting_SystemStatus("ui.Status", "");
 
 
     if(settingsUtil)
@@ -183,27 +186,39 @@ void PangolinDSOViewer::run()
 
 		if(setting_render_display3D)
 		{
+            double sizeFactor = 1.0;
+
 			// Activate efficiently by object
 			Visualization3D_display.Activate(Visualization3D_camera);
 			boost::unique_lock<boost::mutex> lk3d(model3DMutex);
+
+            // Normalize cam size with scale.
+            if(transformDSOToIMU && normalizeCamSize && *normalizeCamSize > 0)
+            {
+                sizeFactor = *normalizeCamSize / transformDSOToIMU->getScale();
+            }
+
 			//pangolin::glDrawColouredCube();
 			int refreshed=0;
 			for(KeyFrameDisplay* fh : keyframes)
 			{
 				float blue[3] = {0,0,1};
-				if(this->settings_showKFCameras) fh->drawCam(1,blue,0.1);
+				if(this->settings_showKFCameras) fh->drawCam(1,blue,0.1 * sizeFactor);
 
 
 				refreshed += (int)(fh->refreshPC(refreshed < 10, this->settings_scaledVarTH, this->settings_absVarTH,
 						this->settings_pointCloudMode, this->settings_minRelBS, this->settings_sparsity));
 				fh->drawPC(1);
 			}
-			if(this->settings_showCurrentCamera) currentCam->drawCam(2,0,0.2);
+			if(this->settings_showCurrentCamera) currentCam->drawCam(2,0,0.2 * sizeFactor);
 
 			float green[3] = {0,1,0};
-			currentGTCam->drawCam(2, green, 0.2);
+            if(gtCamPoseSet)
+            {
+                currentGTCam->drawCam(2, green, 0.2 * sizeFactor);
+            }
 
-			drawConstraints();
+            drawConstraints();
 			lk3d.unlock();
 		}
 
@@ -235,6 +250,26 @@ void PangolinDSOViewer::run()
 			model3DMutex.unlock();
 		}
 
+        // Update scale and status text.
+        {
+            boost::unique_lock<boost::mutex> lk(model3DMutex);
+            if(transformDSOToIMU)
+            {
+                settings_Scale = transformDSOToIMU->getScale();
+            }
+            switch(systemStatus)
+            {
+                case dmvio::VISUAL_INIT:
+                    setting_SystemStatus = "Visual-init";
+                    break;
+                case dmvio::VISUAL_ONLY:
+                    setting_SystemStatus = "Visual-only";
+                    break;
+                case dmvio::VISUAL_INERTIAL:
+                    setting_SystemStatus = "VIO";
+                    break;
+            }
+        }
 
 		if(setting_render_displayVideo)
 		{
@@ -578,6 +613,12 @@ void PangolinDSOViewer::publishTransformDSOToIMU(const dmvio::TransformDSOToIMU&
     boost::unique_lock<boost::mutex> lk(model3DMutex);
     transformDSOToIMU = std::make_unique<dmvio::TransformDSOToIMU>(transformDSOToIMUPassed, std::make_shared<bool>(false),
             std::make_shared<bool>(false), std::make_shared<bool>(false));
+}
+
+void PangolinDSOViewer::publishSystemStatus(dmvio::SystemStatus systemStatus)
+{
+    boost::unique_lock<boost::mutex> lk(model3DMutex);
+    this->systemStatus = systemStatus;
 }
 
 void PangolinDSOViewer::addGTCamPose(const Sophus::SE3& gtPose)

@@ -17,6 +17,10 @@ When using this project in academic work, please consider citing:
       doi = {10.1109/LRA.2021.3140129}
     }
 
+## New: Live demo for Realsense cameras
+* **Update**: Now there is a live demo for Realsense cameras. See [doc/RealsenseLiveVersion.md](doc/RealsenseLiveVersion.md) for details. The page also contains interesting tips for improving performance on custom datasets.
+  * Note that it's not possible anymore to pass IMU noise values with the `camchain.yaml`, you need to use the `settings.yaml` file or commandline args.
+
 ### 1. Related Papers
 * **[DM-VIO: Delayed Marginalization Visual-Inertial Odometry](https://vision.in.tum.de/dm-vio)**, L. von Stumberg and D. Cremers, In IEEE Robotics and Automation Letters (RA-L), volume 7, 2022
 * **[Direct Sparse Visual-Inertial Odometry using Dynamic Marginalization](https://vision.in.tum.de/vi-dso)**, L. von Stumberg, V. Usenko and D. Cremers, In International Conference on Robotics and Automation (ICRA), 2018
@@ -81,6 +85,10 @@ Install from [https://github.com/stevenlovegrove/Pangolin](https://github.com/st
 
 #### 2.2 Recommended Dependencies
 
+##### Librealsense
+This is necessary for the live demo for Realsense cameras. See 
+[doc/RealsenseLiveVersion.md](doc/RealsenseLiveVersion.md) for details
+
 ##### GTest (optional).
 For running tests, install with `git submodule update --init`.
 
@@ -138,7 +146,7 @@ They can be used to
 
 #### Commandline arguments
 There are two types of commandline arguments:
-1. Main arguments defined `in main_dmvio_dataset.cpp` (see `parseArgument`). Most of these are derived from 
+1. Main arguments defined `in util/MainSettings.cpp` (see `parseArgument` and `registerArgs`). Most of these are derived from 
 DSO, so you can read [src/dso/README.md](src/dso/README.md) for documentation on them. 
 2. Lots of additional settings are defined using the `SettingsUtil`. They can be set either using comandline
 or by placing them in the yaml file defined with the commandline argument `settingsFile`.
@@ -146,30 +154,42 @@ All of them are printed to commandline when the program starts (and also into th
 Most of these are documented in the header file they are defined in 
 (see `src/IMU/IMUSettings.h`, `src/IMUInitialization/IMUInitSettings.h`).
 
-#### Running on your own datasets
+### 4 Running the live demo
+See [doc/RealsenseLiveVersion.md](doc/RealsenseLiveVersion.md)
+
+### 5 Running on your own datasets
 To run on your own dataset you need
 * to pass the folder containing files with `files=...`
 * an accurate camera calibration! For tips on calibration and the format of camera.txt see 
 [src/dso/README.md](src/dso/README.md).
 * to set the `mode=1` unless you have a photometric calibration (vignette.png and pcalib.txt).
-* a file times.txt which contains **exactly** one timestamp for each image in the image folder.
+* a file times.txt which contains **exactly** one timestamp for each image in the image folder. Note that this file 
+  contains the timestamp twice, first in nanoseconds and then in seconds.
 
 When enabling IMU data you also need
 
 * IMU calibration (transformation between camera and IMU) as a `camchain.yaml`. Note that only the field `cam0/T_cam_imu`
 and optionally the noise values are read from this file.
-* a file containing IMU data. For each image it **must** contain an IMU 'measurement' with exactly the same timestamp. 
+* a file containing synchronized IMU data. For each image it **must** contain an IMU 'measurement' with exactly the same timestamp. 
 If the sensor does not output this, a fake measurement with this timestamp has to be interpolated in advance.
-    The [DM-VIO python tools](https://github.com/lukasvst/dm-vio-python-tools) contain a script to do this.
+    The [DM-VIO python tools](https://github.com/lukasvst/dm-vio-python-tools) contain a script to do this (see Notes on IMU-camera synchronization below).
 * You should also set the IMU noise values (see `configs/tumvi.yaml`, `configs/euroc.yaml`, and `configs/4seasons.yaml`).
 You can read them from an Allan-Variance plot (either computed yourself or taken from datasheet of IMU). 
 Note that often times these values are too small in practice and should be inflated by a large factor for optimal results.
+We recommend first trying the sample noise values (e.g. the one for TUM-VI) and only using your own if they improve the performance.
+
+**Notes on IMU-camera synchronization:** There are two "levels" of IMU-camera synchronization:
+* The first one is that IMU and camera timestamps are recorded with the same device or otherwise made consistent. This is a prerequisite for running DM-VIO.
+* The second level is that the IMU is triggered manually and always records an IMU sample exactly during the timestamp (middle of exposure) of each image. E.g. the VI-Sensor used in the EuRoC dataset does this, but most other visual-inertial sensors don't. For these sensors you can still run DM-VIO, but first you need to add a "fake IMU measurement" for each camera timestamp, by interpolating the neighboring IMU samples. You can do this by running
+
+      python3 interpolate_imu_file --input imu.txt --times times.txt --output pass_this_imu_file_to_dmvio.txt
 
 You can first set `useimu=0` to try the visual-only system (basically DSO). If this does not work well for 
 comparably slow motions, there is likely a problem with camera calibration which should be addressed first.
 
+**For adjusting your config you might also find the tips [given on this page](doc/RealsenseLiveVersion.md#adjusting-the-config-file) interesting.**
 
-### 4 License
+### 6 License
 DM-VIO is based on Direct Sparse Odometry (DSO), which was developed by Jakob Engel 
 at the Technical University of Munich and Intel.
 Like DSO, DM-VIO is licensed under the GNU General Public License

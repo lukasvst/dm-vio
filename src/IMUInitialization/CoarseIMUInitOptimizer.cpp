@@ -24,6 +24,7 @@
 #include "IMU/IMUUtils.h"
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/slam/BetweenFactor.h>
+#include <GTSAMIntegration/Sim3GTSAM.h>
 #include "GTSAMIntegration/PoseTransformationFactor.h"
 #include "GTSAMIntegration/ExtUtils.h"
 #include "dso/util/FrameShell.h"
@@ -193,8 +194,6 @@ dmvio::CoarseIMUInitOptimizer::OptimizationResult dmvio::CoarseIMUInitOptimizer:
     transformDSOToIMU->updateWithValues(optimizedValues);
     double error = optimizer.error();
     double normalizedError = error / numFrames;
-    std::cout << "CoarseIMUInit error: " << error << std::endl;
-    std::cout << "Normalized CoarseIMUInit error: " << normalizedError << std::endl;
 
     bool good = true;
     // If error is too high we assume that odometry failed and request a full reset.
@@ -202,7 +201,7 @@ dmvio::CoarseIMUInitOptimizer::OptimizationResult dmvio::CoarseIMUInitOptimizer:
        (settings.requestFullResetNormalizedErrorThreshold > 0 &&
         normalizedError > settings.requestFullResetNormalizedErrorThreshold))
     {
-        std::cout << "Large CoarseIMUInitializer error! Requesting full reset!" << std::endl;
+        std::cout << "Large CoarseIMUInitializer error! Requesting full reset! " << normalizedError << std::endl;
         good = false;
         dso::setting_fullResetRequested = true;
     }

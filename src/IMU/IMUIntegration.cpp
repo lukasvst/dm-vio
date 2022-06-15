@@ -108,7 +108,10 @@ IMUIntegration::IMUIntegration(dso::CalibHessian* HCalib, const IMUCalibration& 
 // return lastKeyframe to newKeyframe.
 Sophus::SE3d IMUIntegration::initCoarseGraph()
 {
-    std::cout << "Prepared keyframe id: " << preparedKeyframe << std::endl;
+    if(!dso::setting_debugout_runquiet)
+    {
+        std::cout << "Prepared keyframe id: " << preparedKeyframe << std::endl;
+    }
     int keyframeId = preparedKeyframe;
     preparedKeyframe = -1;
 
@@ -229,7 +232,10 @@ void IMUIntegration::prepareKeyframe(int frameId)
     // Make sure that the previous keyframe was finished!
     if(preparedKeyframe != -1 && !linearizeOperation)
     {
-        std::cout << "Note: there is already a keyframe prepared! " << preparedKeyframe << std::endl;
+        if(!dso::setting_debugout_runquiet)
+        {
+            std::cout << "Note: there is already a keyframe prepared! " << preparedKeyframe << std::endl;
+        }
         assert(frameId == preparedKeyframe + 1);
         assert(!preparedKFCreated);
 
@@ -293,16 +299,17 @@ void IMUIntegration::postOptimization(int keyframeId)
 }
 
 // This method gets the latest BA values for the coarse tracker (for the next graph).
-void IMUIntegration::finishKeyframeOptimization(int keyframeId)
+bool IMUIntegration::finishKeyframeOptimization(int keyframeId)
 {
     if(!initializedBeforePostOptimization)
     {
         // Get latestBias from initializer until initialized
         latestBias = imuInitializer->getLatestBias();
-        return;
+        return false;
     }
     informationBAToCoarse = baLogic->finishKeyframeOptimization(keyframeId);
     latestBias = informationBAToCoarse->latestBABias;
+    return true;
 }
 
 bool IMUIntegration::newTrackingRefNeedsHandling()

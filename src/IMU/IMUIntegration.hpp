@@ -137,7 +137,9 @@ public:
     // These methods are both called right after the BA optimization, the former outside and the latter inside the
     // mutex for changing the coarse tracking ref.
     void postOptimization(int keyframeId);
-    void finishKeyframeOptimization(int keyframeId); // updateBAValues should be called before this.
+    // updateBAValues should be called before this. Returns true if this BA optimization has used IMU data (which is
+    // also true if and only if the next CoarseTracking will use IMU data.)
+    bool finishKeyframeOptimization(int keyframeId);
 
     // Called when all keyframe operations (including marginalization) are finished.
     // Note that this can be after the tracking reference has already changed

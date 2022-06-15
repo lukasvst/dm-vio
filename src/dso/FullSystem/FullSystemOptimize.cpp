@@ -496,7 +496,10 @@ float FullSystem::optimize(int mnumOptIts)
                                                                                                   (patternNum *
                                                                                                    ef->resInA))),
                                                                     frameHessians.back()->shell->trackingWasGood);
-            std::cout << "Dynamic weight: " << dynamicGTSAMWeight << std::endl;
+            if(!setting_debugout_runquiet)
+            {
+                std::cout << "Dynamic weight: " << dynamicGTSAMWeight << std::endl;
+            }
         }
 
         solveSystem(iteration, lambda);
@@ -582,9 +585,12 @@ float FullSystem::optimize(int mnumOptIts)
 		if(canbreak && iteration >= setting_minOptIterations) break;
 	}
 
-	std::cout << "Num BA Iterations done: " << numIterations << "\n";
+    if(!setting_debugout_runquiet)
+    {
+        std::cout << "Num BA Iterations done: " << numIterations << "\n";
+    }
 
-	// Update again!
+    // Update again!
     baIntegration->updateDynamicWeight(lastEnergy[0], sqrtf((float)(lastEnergy[0] / (patternNum*ef->resInA))), frameHessians.back()->shell->trackingWasGood);
 
     Vec10 newStateZero = Vec10::Zero();

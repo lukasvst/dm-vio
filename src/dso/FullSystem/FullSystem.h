@@ -171,6 +171,7 @@ public:
 private:
 
     dmvio::IMUIntegration imuIntegration;
+    bool imuUsedBefore = false;
     dmvio::BAGTSAMIntegration* baIntegration = nullptr;
 public:
 	dmvio::IMUIntegration &getImuIntegration();

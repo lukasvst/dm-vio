@@ -27,6 +27,7 @@
 
 #include "IOWrapper/ImageRW.h"
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 
 namespace dso
@@ -42,9 +43,14 @@ MinimalImageB* readImageBW_8U(std::string filename)
 		printf("cv::imread could not read image %s! this may segfault. \n", filename.c_str());
 		return 0;
 	}
+    if(m.type() == CV_8UC3)
+    {
+        // can happen for webp
+        cv::cvtColor(m, m, cv::COLOR_BGR2GRAY);
+    }
 	if(m.type() != CV_8U)
 	{
-		printf("cv::imread did something strange! this may segfault. \n");
+		printf("cv::imread did something strange! this may segfault. %i \n", m.type());
 		return 0;
 	}
 	MinimalImageB* img = new MinimalImageB(m.cols, m.rows);

@@ -20,6 +20,8 @@ find_package(Boost COMPONENTS system thread filesystem chrono serialization date
 find_package(GTSAM REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
+find_package(realsense2 QUIET)
+
 IF(${Boost_VERSION} GREATER_EQUAL 106500)
     message("Building with stacktrace support.")
 	set(STACKTRACE_LIBRARIES dl)
@@ -111,6 +113,11 @@ set(dmvio_SOURCE_FILES
         src/IMUInitialization/IMUInitializerLogic.cpp
         src/IMUInitialization/IMUInitializerTransitions.cpp
 		src/GTSAMIntegration/AugmentedScatter.cpp
+		src/live/FrameContainer.cpp
+		src/live/IMUInterpolator.cpp
+        src/util/MainSettings.cpp
+        src/live/FrameSkippingStrategy.cpp
+		src/live/DatasetSaver.cpp
 		)
 
 
@@ -184,6 +191,14 @@ if (OpenCV_FOUND AND Pangolin_FOUND)
 	add_executable(dmvio_dataset ${PROJECT_SOURCE_DIR}/src/main_dmvio_dataset.cpp)
 	set(DMVIO_LINKED_LIBRARIES boost_system cxsparse ${BOOST_THREAD_LIBRARY} ${LIBZIP_LIBRARY} ${Pangolin_LIBRARIES} ${OpenCV_LIBS} gtsam ${YAML_CPP_LIBRARIES} ${STACKTRACE_LIBRARIES})
     target_link_libraries(dmvio_dataset dmvio ${DMVIO_LINKED_LIBRARIES})
+
+	if(realsense2_FOUND)
+		message("--- compiling dmvio_t265.")
+		set(dmvio_t265_SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/live/RealsenseT265.cpp)
+		add_executable(dmvio_t265 ${PROJECT_SOURCE_DIR}/src/main_dmvio_t265.cpp ${dmvio_t265_SOURCE_FILES})
+		target_link_libraries(dmvio_t265 dmvio ${DMVIO_LINKED_LIBRARIES} realsense2::realsense2)
+	endif()
+
 else()
 	message("--- not building dmvio_dataset, since either don't have openCV or Pangolin.")
 endif()

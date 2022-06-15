@@ -64,7 +64,8 @@ class PangolinDSOViewer : public Output3DWrapper
 {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    PangolinDSOViewer(int w, int h, bool startRunThread=true, std::shared_ptr<dmvio::SettingsUtil> settingsUtil = nullptr);
+    PangolinDSOViewer(int w, int h, bool startRunThread=true, std::shared_ptr<dmvio::SettingsUtil> settingsUtil =
+            nullptr, std::shared_ptr<double> normalizeCamSize = nullptr);
 	virtual ~PangolinDSOViewer();
 
 	void run();
@@ -79,6 +80,7 @@ public:
     virtual void publishGraph(const std::map<uint64_t, Eigen::Vector2i, std::less<uint64_t>, Eigen::aligned_allocator<std::pair<const uint64_t, Eigen::Vector2i>>> &connectivity) override;
     virtual void publishKeyframes( std::vector<FrameHessian*> &frames, bool final, CalibHessian* HCalib) override;
     virtual void publishCamPose(FrameShell* frame, CalibHessian* HCalib) override;
+    virtual void publishSystemStatus(dmvio::SystemStatus systemStatus) override;
 
     void addGTCamPose(const Sophus::SE3& gtPose);
 
@@ -153,7 +155,9 @@ private:
 	SE3 firstGTCamPoseMetric;
 	bool gtCamPoseSet = false;
 	std::unique_ptr<dmvio::TransformDSOToIMU> transformDSOToIMU;
+    dmvio::SystemStatus systemStatus;
 	void updateDisplayedCamPose();
+    std::shared_ptr<double> normalizeCamSize;
 
 
 	std::shared_ptr<dmvio::SettingsUtil> settingsUtil;

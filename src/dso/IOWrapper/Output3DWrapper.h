@@ -41,6 +41,20 @@ namespace cv {
 namespace dmvio
 {
 class TransformDSOToIMU;
+
+// Status of the system.
+enum SystemStatus
+{
+    // No poses will be sent out yet. Status in the beginning and after a full reset. This status will be sent
+    // just after the CoarseInitializer has set its first frame (and every time this happens again).
+    VISUAL_INIT,
+    // Visual-only odometry, no scale available yet. Will be sent just after the visual initializater has finished.
+    VISUAL_ONLY,
+    // Visual-inertial odometry, IMU is used in the Coarse tracking. This state will be sent just before the first
+    // estimated scale will be sent with publishTransformDSOToIMU. After this has been sent the next Coarse
+    // frame tracking will use IMU data for the first time.
+    VISUAL_INERTIAL
+};
 }
 
 namespace dso
@@ -144,6 +158,13 @@ public:
          * TransformDSOToIMU(TransformDSOToIMU& other, std::shared_ptr<bool> optScale, std::shared_ptr<bool> optGravity, std::shared_ptr<bool> optT_cam_imu);
          */
         virtual void publishTransformDSOToIMU(const dmvio::TransformDSOToIMU& transformDSOToIMU) {}
+
+
+        /*
+         * Usage:
+         * Called every time the status of the system changes.
+         */
+        virtual void publishSystemStatus(dmvio::SystemStatus systemStatus) {}
 
 
         /*  Usage:

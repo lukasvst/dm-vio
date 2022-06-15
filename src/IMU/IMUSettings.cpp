@@ -23,6 +23,7 @@
 #include "IMUSettings.h"
 #include "yaml-cpp/yaml.h"
 #include <iostream>
+#include <fstream>
 
 using namespace dmvio;
 
@@ -84,26 +85,38 @@ void IMUCalibration::loadFromFile(std::string settingsFilename)
     std::cout << "Used T_cam_imu: " << std::endl << matrix << std::endl;
     T_cam_imu = Sophus::SE3d(matrix);
 
-    if(config["accelerometer_random_walk"])
+    if(config["accelerometer_random_walk"] || config["gyroscope_random_walk"] || config["accelerometer_noise_density"]  ||
+    config["gyroscope_noise_density"])
     {
-        sigma_between_b_a = config["accelerometer_random_walk"].as<double>(); //  * 0.5;
-    }
-    if(config["gyroscope_random_walk"])
-    {
-        sigma_between_b_g = config["gyroscope_random_walk"].as<double>();// * 0.5;
-    }
-    if(config["accelerometer_noise_density"])
-    {
-        accel_sigma = config["accelerometer_noise_density"].as<double>();// / deltaTime;
-    }
-    if(config["gyroscope_noise_density"])
-    {
-        gyro_sigma = config["gyroscope_noise_density"].as<double>();// / deltaTime;
+        std::cout << "WARNING IMPORTANT: Passing IMU noise values via the IMU camchain.yaml file is not supported any"
+                     " more! Please pass them via the settings file or as a commandline parameter!" << std::endl;
     }
 
     std::cout << "Used noise values: " << sigma_between_b_a << " " << sigma_between_b_g << " " << accel_sigma << " "
               << gyro_sigma << std::endl;
 }
+
+void IMUCalibration::saveToFile(std::string filename)
+{
+    YAML::Node node;
+    std::vector<std::vector<double>> vector(4, std::vector<double>(4, 0.0));
+    Eigen::Matrix4d matrix = T_cam_imu.matrix();
+    for(int x = 0; x < 4; ++x)
+    {
+        for(int y = 0; y < 4; ++y)
+        {
+            vector[x][y] = matrix(x, y);
+        }
+    }
+
+    node["cam0"]["T_cam_imu"] = vector;
+
+    std::ofstream stream(filename);
+    stream << node;
+}
+
+IMUCalibration::IMUCalibration(const Sophus::SE3d& tCamImu) : T_cam_imu(tCamImu)
+{}
 
 void IMUSettings::registerArgs(dmvio::SettingsUtil& set)
 {
