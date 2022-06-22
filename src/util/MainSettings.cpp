@@ -150,6 +150,16 @@ void MainSettings::parseArgument(char* arg, SettingsUtil& settingsUtil)
             setting_affineOptModeB = -1; //-1: fix. >=0: optimize (with prior, if > 0).
             setting_minGradHistAdd = 3;
         }
+        if(option == 3)
+        {
+            // This mode is useful because mode 0 assumes that exposure is available (as it adds a strong prior to
+            // the affine brightness change between images), and mode 1 does not use vignette at all.
+            // This mode uses vignette (and response), but still fully optimizes brightness changes, hence it is
+            // appropriate for sensors without exposure time but with a calibrated vignette.
+            printf("PHOTOMETRIC MODE WITH CALIBRATION, BUT NO OR INACCURATE EXPOSURE!\n");
+            setting_affineOptModeA = 0; //-1: fix. >=0: optimize (with prior, if > 0).
+            setting_affineOptModeB = 0; //-1: fix. >=0: optimize (with prior, if > 0).
+        }
         return;
     }
 

@@ -17,8 +17,9 @@ When using this project in academic work, please consider citing:
       doi = {10.1109/LRA.2021.3140129}
     }
 
-## New: Live demo for Realsense cameras
-* **Update**: Now there is a live demo for Realsense cameras. See [doc/RealsenseLiveVersion.md](doc/RealsenseLiveVersion.md) for details. The page also contains interesting tips for improving performance on custom datasets.
+## New: ROS version and Live demo for Realsense cameras
+* **Update Jun 22, 2022**: There is a ROS wrapper for DM-VIO, available at https://github.com/lukasvst/dm-vio-ros
+* **Update Jun 15, 2022**: Now there is a live demo for Realsense cameras. See [doc/RealsenseLiveVersion.md](doc/RealsenseLiveVersion.md) for details. The page also contains interesting tips for improving performance on custom datasets.
   * Note that it's not possible anymore to pass IMU noise values with the `camchain.yaml`, you need to use the `settings.yaml` file or commandline args.
 
 ### 1. Related Papers

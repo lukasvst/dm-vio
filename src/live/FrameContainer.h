@@ -85,6 +85,9 @@ public:
     // to getImageAndIMUData.
     void addFrame(Frame frame);
 
+    // Can be used to stop a call to getImageAndIMUData and return an empty image.
+    void stop();
+
 private:
     std::mutex framesMutex; // Protects the frames array.
     std::condition_variable frameArrivedCond;
@@ -92,6 +95,8 @@ private:
     std::deque<Frame> frames;
 
     double prevTimestamp = -1.0; // timestamp of last measurement.
+
+    bool stopSystem = false;
 };
 }
 

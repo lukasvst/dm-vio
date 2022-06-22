@@ -30,10 +30,12 @@ std::pair<std::unique_ptr<dso::ImageAndExposure>, dmvio::IMUData>
 dmvio::FrameContainer::getImageAndIMUData(int maxSkipFrames)
 {
     std::unique_lock<std::mutex> lock(framesMutex);
-    while(frames.size() == 0) // Wait for new image.
+    while(frames.size() == 0 && !stopSystem) // Wait for new image.
     {
         frameArrivedCond.wait(lock);
     }
+
+    if(stopSystem) return std::make_pair(nullptr, dmvio::IMUData{});
 
     IMUData imuData;
 
@@ -106,6 +108,12 @@ int dmvio::FrameContainer::getQueueSize()
 {
     std::unique_lock<std::mutex> lock(framesMutex);
     return frames.size();
+}
+
+void dmvio::FrameContainer::stop()
+{
+    stopSystem = true;
+    frameArrivedCond.notify_all();
 }
 
 dmvio::Frame::Frame(std::unique_ptr<dso::ImageAndExposure>&& img, double imgTimestamp) : img(std::move(img)),
