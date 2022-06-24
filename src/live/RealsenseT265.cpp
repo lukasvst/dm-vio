@@ -191,7 +191,7 @@ void dmvio::RealsenseT265::start()
 
                 if(saver)
                 {
-                    saver->addImage(mat, timestamp / 1000.0, exposure);
+                    saver->addImage(mat.clone(), timestamp / 1000.0, exposure);
                 }
 
                 auto img = std::make_unique<dso::MinimalImageB>(mat.cols, mat.rows);
