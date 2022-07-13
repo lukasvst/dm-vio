@@ -76,97 +76,73 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <fstream>
+#include <utility>
 #include "IMU/IMUTypes.h"
 #include "sophus/se3.hpp"
 #include "util/MinimalImage.h"
+
+class now;
 
 using namespace dmvio;
 using std::vector;
 
 dmvio::OakdS2::OakdS2(FrameContainer &frameContainer, std::string cameraCalibSavePath, DatasetSaver *
-datasetSaver)
-        : imuInt(frameContainer, datasetSaver), cameraCalibSavePath(cameraCalibSavePath), saver(datasetSaver) {
-
+datasetSaver, uint32_t exposureTimeUs)
+        : imuInt(frameContainer, datasetSaver), cameraCalibSavePath(std::move(cameraCalibSavePath)),
+          saver(datasetSaver), exposureTimeUs(exposureTimeUs) {
+    // Define sources and outputs
+    auto monoLeft = pipeline.create<dai::node::MonoCamera>();
+    auto imu = pipeline.create<dai::node::IMU>();
+    auto xoutLeft = pipeline.create<dai::node::XLinkOut>();
+    auto xoutImu = pipeline.create<dai::node::XLinkOut>();
+    xoutLeft->setStreamName("left");
+    xoutImu->setStreamName("imu");
+    // Properties
+    monoLeft->setBoardSocket(dai::CameraBoardSocket::LEFT);
+    monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
+    monoLeft->setFps(20.0);
+    monoLeft->initialControl.setManualExposure(exposureTimeUs, 400);
+    imu->enableIMUSensor({dai::IMUSensor::ACCELEROMETER_RAW, dai::IMUSensor::GYROSCOPE_RAW}, 200);
+    imu->setBatchReportThreshold(5);
+    imu->setMaxBatchReports(20);
+    // Linking
+    monoLeft->out.link(xoutLeft->input);
+    imu->out.link(xoutImu->input);
+    // Connect to device and start pipeline
+    device.startPipeline(pipeline);
+    dataThread = boost::thread(&OakdS2::start, this);
+    dataThread.join();
 }
 
 void dmvio::OakdS2::start() {
-    dai::Pipeline pipeline;
-    auto monoLeft = pipeline.create<dai::node::MonoCamera>();
-    auto monoRight = pipeline.create<dai::node::MonoCamera>();
-    auto stereo = pipeline.create<dai::node::StereoDepth>();
-    auto imu = pipeline.create<dai::node::IMU>();
-
-    auto xoutRectifLeft = pipeline.create<dai::node::XLinkOut>();
-    auto xoutRectifRight = pipeline.create<dai::node::XLinkOut>();
-    auto xoutImu = pipeline.create<dai::node::XLinkOut>();
-    auto xout = pipeline.create<dai::node::XLinkOut>();
-
-    xout->setStreamName("frames");
-    xoutRectifLeft->setStreamName("rectified_left");
-    xoutRectifRight->setStreamName("rectified_right");
-    xoutImu->setStreamName("imu");
-
-    monoLeft->setBoardSocket(dai::CameraBoardSocket::LEFT);
-    monoLeft->setResolution(
-            dai::MonoCameraProperties::SensorResolution::THE_400_P);
-    monoLeft->setFps(20.0);
-    monoRight->setBoardSocket(dai::CameraBoardSocket::RIGHT);
-    monoRight->setResolution(
-            dai::MonoCameraProperties::SensorResolution::THE_400_P);
-    monoRight->setFps(20.0);
-
-    imu->enableIMUSensor(
-            {dai::IMUSensor::ACCELEROMETER_RAW, dai::IMUSensor::GYROSCOPE_RAW}, 200);
-    imu->setBatchReportThreshold(5);
-    imu->setMaxBatchReports(20);
-
-    monoLeft->out.link(stereo->left);
-    monoRight->out.link(stereo->right);
-    stereo->rectifiedLeft.link(xoutRectifLeft->input);
-    stereo->rectifiedRight.link(xoutRectifRight->input);
-    imu->out.link(xoutImu->input);
-    // sink to one xout
-    stereo->rectifiedLeft.link(xout->input);
-//    stereo->rectifiedRight.link(xout->input);
-    imu->out.link(xout->input);
+    // Clear queue events
+    device.getQueueEvents();
     readCalibration();
-    auto newFrame = [&](const std::shared_ptr<dai::ADatatype> &frame) {
-        if (!calibrationRead) {
-            std::cout<<"=================not read calibration================"<<std::endl;
-            return;
-        }
-        if (dynamic_cast<dai::IMUData *>(frame.get())) {
-            auto *motion = static_cast<dai::IMUData *>(frame.get());
+    while (true) {
+        auto ev = device.getQueueEvent();
+        if (ev == "imu") {
+            auto motion = device.getOutputQueue(ev)->get<dai::IMUData>();
             for (auto &imuPacket: motion->packets) {
                 imuInt.addAccData({imuPacket.acceleroMeter.x, imuPacket.acceleroMeter.y, imuPacket.acceleroMeter.z},
                                   imuPacket.acceleroMeter.timestamp.sec / 1000.0);
                 imuInt.addGyrData({imuPacket.gyroscope.x, imuPacket.gyroscope.y, imuPacket.gyroscope.z},
                                   imuPacket.gyroscope.timestamp.sec / 1000.0);
             }
-        } else if (dynamic_cast<dai::ImgFrame *>(frame.get())) {
-            auto *fs = static_cast<dai::ImgFrame *>(frame.get());
-            auto f = fs->getInstanceNum(); // We only use left camera
-            if (!f) {
-                std::cout << "Weird Frame, skipping" << std::endl;
-                return;
-            }
-            double timestamp = fs->getTimestamp().time_since_epoch().count() / 1000.0;
-
+        } else if (ev == "left") {
+            auto fs = device.getOutputQueue(ev)->get<dai::ImgFrame>();
+            double timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    fs->getTimestamp().time_since_epoch()).count();
             // We somehow seem to get each image twice.
             if (undistorter && std::abs(timestamp - lastImgTimestamp) > 0.001) {
-                cv::Mat mat = fs->getCvFrame();
+                cv::Mat mat = fs->getFrame();
                 assert(mat.type() == CV_8U);
                 // Multiply exposure by 1000, as we want milliseconds.
-                // TODO set real exposure
-                double exposure = 0.001 * 1e-3;
-
+                double exposure = exposureTimeUs * 1e-3;
                 if (saver) {
                     saver->addImage(mat, timestamp / 1000.0, exposure);
                 }
-
                 auto img = std::make_unique<dso::MinimalImageB>(mat.cols, mat.rows);
                 memcpy(img->data, mat.data, mat.rows * mat.cols);
-
                 // timestamp is in milliseconds, but shall be in seconds
                 double finalTimestamp = timestamp / 1000.0;
                 // gets float exposure and double timestamp
@@ -181,16 +157,15 @@ void dmvio::OakdS2::start() {
                 lastImgTimestamp = timestamp;
             }
         }
-    };
-    device.startPipeline(pipeline);
-    device.getOutputQueue("frames", 100, false)->addCallback(newFrame);
+    }
 }
+
 void printMatrix(std::vector<std::vector<float>> matrix) {
     using namespace std;
     std::string out = "[";
-    for(auto row : matrix) {
+    for (auto row: matrix) {
         out += "[";
-        for(auto val : row) out += to_string(val) + ", ";
+        for (auto val: row) out += to_string(val) + ", ";
         out = out.substr(0, out.size() - 2) + "]\n";
     }
     out = out.substr(0, out.size() - 1) + "]\n\n";
@@ -198,7 +173,7 @@ void printMatrix(std::vector<std::vector<float>> matrix) {
 }
 
 void dmvio::OakdS2::readCalibration() {
-    if(calibrationRead) return;
+    if (calibrationRead) return;
     using namespace std;
     dai::CalibrationHandler calibData = device.readCalibration();
     // calibData.eepromToJsonFile(filename);
@@ -220,7 +195,7 @@ void dmvio::OakdS2::readCalibration() {
     printMatrix(intrinsics);
     std::vector<std::vector<float>> extrinsics;
     printMatrix(extrinsics);
-    if(calibrationRead) return;
+    if (calibrationRead) return;
 }
 
 void OakdS2::setUndistorter(dso::Undistort *undistort) {
