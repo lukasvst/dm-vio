@@ -108,11 +108,11 @@ void dmvio::OakdS2::start() {
 
     monoLeft->setBoardSocket(dai::CameraBoardSocket::LEFT);
     monoLeft->setResolution(
-            dai::MonoCameraProperties::SensorResolution::THE_720_P);
+            dai::MonoCameraProperties::SensorResolution::THE_400_P);
     monoLeft->setFps(20.0);
     monoRight->setBoardSocket(dai::CameraBoardSocket::RIGHT);
     monoRight->setResolution(
-            dai::MonoCameraProperties::SensorResolution::THE_720_P);
+            dai::MonoCameraProperties::SensorResolution::THE_400_P);
     monoRight->setFps(20.0);
 
     imu->enableIMUSensor(
@@ -127,20 +127,24 @@ void dmvio::OakdS2::start() {
     imu->out.link(xoutImu->input);
     // sink to one xout
     stereo->rectifiedLeft.link(xout->input);
-    // stereo->rectifiedRight.link(xout->input);
+//    stereo->rectifiedRight.link(xout->input);
     imu->out.link(xout->input);
-    dai::Device device(pipeline);
-
-    auto callback = [&](const std::shared_ptr<dai::ADatatype> &frame) {
-        if (!calibrationRead) return;
-        if (auto *motion = dynamic_cast<dai::IMUData *>(frame.get())) {
+    readCalibration();
+    auto newFrame = [&](const std::shared_ptr<dai::ADatatype> &frame) {
+        if (!calibrationRead) {
+            std::cout<<"=================not read calibration================"<<std::endl;
+            return;
+        }
+        if (dynamic_cast<dai::IMUData *>(frame.get())) {
+            auto *motion = static_cast<dai::IMUData *>(frame.get());
             for (auto &imuPacket: motion->packets) {
                 imuInt.addAccData({imuPacket.acceleroMeter.x, imuPacket.acceleroMeter.y, imuPacket.acceleroMeter.z},
                                   imuPacket.acceleroMeter.timestamp.sec / 1000.0);
                 imuInt.addGyrData({imuPacket.gyroscope.x, imuPacket.gyroscope.y, imuPacket.gyroscope.z},
                                   imuPacket.gyroscope.timestamp.sec / 1000.0);
             }
-        } else if (auto *fs = dynamic_cast<dai::ImgFrame *>(frame.get())) {
+        } else if (dynamic_cast<dai::ImgFrame *>(frame.get())) {
+            auto *fs = static_cast<dai::ImgFrame *>(frame.get());
             auto f = fs->getInstanceNum(); // We only use left camera
             if (!f) {
                 std::cout << "Weird Frame, skipping" << std::endl;
@@ -152,7 +156,6 @@ void dmvio::OakdS2::start() {
             if (undistorter && std::abs(timestamp - lastImgTimestamp) > 0.001) {
                 cv::Mat mat = fs->getCvFrame();
                 assert(mat.type() == CV_8U);
-
                 // Multiply exposure by 1000, as we want milliseconds.
                 // TODO set real exposure
                 double exposure = 0.001 * 1e-3;
@@ -172,7 +175,6 @@ void dmvio::OakdS2::start() {
                         static_cast<float>(exposure),
                         finalTimestamp));
                 img.reset();
-
                 // Add image to the IMU interpolator, which will forward it to the FrameContainer, once the
                 // corresponding IMU data is available.
                 imuInt.addImage(std::move(finalImage), finalTimestamp);
@@ -180,10 +182,45 @@ void dmvio::OakdS2::start() {
             }
         }
     };
-    device.getOutputQueue("frames", 4, false)->addCallback(callback);
+    device.startPipeline(pipeline);
+    device.getOutputQueue("frames", 100, false)->addCallback(newFrame);
+}
+void printMatrix(std::vector<std::vector<float>> matrix) {
+    using namespace std;
+    std::string out = "[";
+    for(auto row : matrix) {
+        out += "[";
+        for(auto val : row) out += to_string(val) + ", ";
+        out = out.substr(0, out.size() - 2) + "]\n";
+    }
+    out = out.substr(0, out.size() - 1) + "]\n\n";
+    cout << out;
 }
 
 void dmvio::OakdS2::readCalibration() {
+    if(calibrationRead) return;
+    using namespace std;
+    dai::CalibrationHandler calibData = device.readCalibration();
+    // calibData.eepromToJsonFile(filename);
+    std::vector<std::vector<float>> intrinsics;
+    int width, height;
+    cout << "Intrinsics from defaultIntrinsics function:" << endl;
+    std::tie(intrinsics, width, height) = calibData.getDefaultIntrinsics(dai::CameraBoardSocket::LEFT);
+    printMatrix(intrinsics);
+    cout << "Width: " << width << endl;
+    cout << "Height: " << height << endl;
+    cout << "Stereo baseline distance: " << calibData.getBaselineDistance() << " cm" << endl;
+    cout << "Mono FOV from camera specs: " << calibData.getFov(dai::CameraBoardSocket::LEFT)
+         << ", calculated FOV: " << calibData.getFov(dai::CameraBoardSocket::LEFT, false) << endl;
+    cout << "Intrinsics from getCameraIntrinsics function full resolution:" << endl;
+    intrinsics = calibData.getCameraIntrinsics(dai::CameraBoardSocket::LEFT);
+    printMatrix(intrinsics);
+    cout << "Intrinsics from getCameraIntrinsics function 640 x 400:" << endl;
+    intrinsics = calibData.getCameraIntrinsics(dai::CameraBoardSocket::LEFT, 640, 400);
+    printMatrix(intrinsics);
+    std::vector<std::vector<float>> extrinsics;
+    printMatrix(extrinsics);
+    if(calibrationRead) return;
 }
 
 void OakdS2::setUndistorter(dso::Undistort *undistort) {
