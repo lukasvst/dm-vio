@@ -24,6 +24,7 @@
 #define DMVIO_OAKDS2_H
 
 #include <depthai/depthai.hpp>
+#include <boost/thread.hpp>
 #include "IMU/IMUSettings.h"
 #include "live/IMUInterpolator.h"
 #include "FrameContainer.h"
@@ -37,7 +38,7 @@ namespace dmvio {
         // Images and IMU data will be passed into frameContainer which can be used to get synchronized image and IMU data.
         // Factory calibration will be saved to cameraCalibSavePath.
         // If datasetSaver is set, the IMU data and images will also be saved to file.
-        OakdS2(FrameContainer &frameContainer, std::string cameraCalibSavePath, DatasetSaver *datasetSaver);
+        OakdS2(FrameContainer &frameContainer, std::string cameraCalibSavePath, DatasetSaver *datasetSaver,uint32_t exposureTimeUs);
 
         // Start receiving data.
         void start();
@@ -48,25 +49,19 @@ namespace dmvio {
         std::unique_ptr<IMUCalibration> imuCalibration;
     private:
         void readCalibration();
-
+        dai::Device device;
+        dai::Pipeline pipeline;
         std::string cameraCalibSavePath;
-
-//    rs2::context context;
-//    rs2::config config;
-//    rs2::pipeline pipe;
-//
-//    rs2::pipeline_profile profile;
 
         // Use left camera.
         int useCam = 0;
-
+        uint32_t exposureTimeUs;
         std::atomic<bool> calibrationRead{false};
-
+        boost::thread dataThread;
         // IMU interpolator will take care of creating "fake measurements" to synchronize the sensors by interpolating IMU data.
         IMUInterpolator imuInt;
         dso::Undistort *undistorter = nullptr;
         double lastImgTimestamp = -1.0;
-
         DatasetSaver *saver;
     };
 
