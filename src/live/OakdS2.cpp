@@ -92,49 +92,61 @@ datasetSaver, uint32_t exposureTimeUs)
           saver(datasetSaver), exposureTimeUs(exposureTimeUs) {
     // Define sources and outputs
     auto monoLeft = pipeline.create<dai::node::MonoCamera>();
+    auto monoRight = pipeline.create<dai::node::MonoCamera>();
+    auto stereo = pipeline.create<dai::node::StereoDepth>();
     auto imu = pipeline.create<dai::node::IMU>();
-    auto xoutLeft = pipeline.create<dai::node::XLinkOut>();
-    auto xoutImu = pipeline.create<dai::node::XLinkOut>();
-    xoutLeft->setStreamName("left");
-    xoutImu->setStreamName("imu");
+    auto xout = pipeline.create<dai::node::XLinkOut>();
+    xout->setStreamName("frames");
     // Properties
     monoLeft->setBoardSocket(dai::CameraBoardSocket::LEFT);
     monoLeft->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
-    monoLeft->setFps(20.0);
-    monoLeft->initialControl.setManualExposure(exposureTimeUs, 400);
+    monoLeft->setFps(30.0);
+    monoRight->setBoardSocket(dai::CameraBoardSocket::RIGHT);
+    monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
+    monoRight->setFps(30.0);
+
+//    monoLeft->initialControl.setManualExposure(exposureTimeUs, 400);
+    stereo->setOutputRectified(true);
+    stereo->setOutputDepth(false);
+    stereo->setRectifyEdgeFillColor(0);
+    stereo->setRectifyMirrorFrame(false);
+    stereo->setExtendedDisparity(false);
+
     imu->enableIMUSensor({dai::IMUSensor::ACCELEROMETER_RAW, dai::IMUSensor::GYROSCOPE_RAW}, 200);
     imu->setBatchReportThreshold(5);
     imu->setMaxBatchReports(20);
     // Linking
-    monoLeft->out.link(xoutLeft->input);
-    imu->out.link(xoutImu->input);
+    monoLeft->out.link(stereo->left);
+    monoRight->out.link(stereo->right);
+    stereo->rectifiedLeft.link(xout->input);
+    imu->out.link(xout->input);
     // Connect to device and start pipeline
     device.startPipeline(pipeline);
-    dataThread = boost::thread(&OakdS2::start, this);
-    dataThread.join();
 }
 
 void dmvio::OakdS2::start() {
     // Clear queue events
-    device.getQueueEvents();
     readCalibration();
-    while (true) {
-        auto ev = device.getQueueEvent();
-        if (ev == "imu") {
-            auto motion = device.getOutputQueue(ev)->get<dai::IMUData>();
+    auto newFrame = [&](const std::shared_ptr<dai::ADatatype> &frame) {
+        if (!calibrationRead) {
+            std::cout << "==============================not calibrationRead==============================" << std::endl;
+            return;
+        }
+        if (dynamic_cast<dai::IMUData *>(frame.get())) {
+            auto *motion = static_cast<dai::IMUData *>(frame.get());
             for (auto &imuPacket: motion->packets) {
                 imuInt.addAccData({imuPacket.acceleroMeter.x, imuPacket.acceleroMeter.y, imuPacket.acceleroMeter.z},
-                                  imuPacket.acceleroMeter.timestamp.sec / 1000.0);
+                                  imuPacket.acceleroMeter.timestamp.sec);
                 imuInt.addGyrData({imuPacket.gyroscope.x, imuPacket.gyroscope.y, imuPacket.gyroscope.z},
-                                  imuPacket.gyroscope.timestamp.sec / 1000.0);
+                                  imuPacket.gyroscope.timestamp.sec);
             }
-        } else if (ev == "left") {
-            auto fs = device.getOutputQueue(ev)->get<dai::ImgFrame>();
+        } else if (dynamic_cast<dai::ImgFrame *>(frame.get())) {
+            auto *fs = static_cast<dai::ImgFrame *>(frame.get());
             double timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
                     fs->getTimestamp().time_since_epoch()).count();
             // We somehow seem to get each image twice.
             if (undistorter && std::abs(timestamp - lastImgTimestamp) > 0.001) {
-                cv::Mat mat = fs->getFrame();
+                cv::Mat mat = fs->getCvFrame();
                 assert(mat.type() == CV_8U);
                 // Multiply exposure by 1000, as we want milliseconds.
                 double exposure = exposureTimeUs * 1e-3;
@@ -157,7 +169,8 @@ void dmvio::OakdS2::start() {
                 lastImgTimestamp = timestamp;
             }
         }
-    }
+    };
+    device.getOutputQueue("frames", 100, false)->addCallback(newFrame);
 }
 
 void printMatrix(std::vector<std::vector<float>> matrix) {
@@ -173,7 +186,6 @@ void printMatrix(std::vector<std::vector<float>> matrix) {
 }
 
 void dmvio::OakdS2::readCalibration() {
-    if (calibrationRead) return;
     using namespace std;
     dai::CalibrationHandler calibData = device.readCalibration();
     // calibData.eepromToJsonFile(filename);
@@ -195,6 +207,7 @@ void dmvio::OakdS2::readCalibration() {
     printMatrix(intrinsics);
     std::vector<std::vector<float>> extrinsics;
     printMatrix(extrinsics);
+    calibrationRead = true;
     if (calibrationRead) return;
 }
 
