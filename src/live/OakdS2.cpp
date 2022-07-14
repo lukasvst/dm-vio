@@ -105,7 +105,7 @@ datasetSaver, uint32_t exposureTimeUs)
     monoRight->setResolution(dai::MonoCameraProperties::SensorResolution::THE_400_P);
     monoRight->setFps(30.0);
 
-//    monoLeft->initialControl.setManualExposure(exposureTimeUs, 400);
+//    monoLeft->initialControl.setManualExposure(exposureTimeUs, 150);
     stereo->setOutputRectified(true);
     stereo->setOutputDepth(false);
     stereo->setRectifyEdgeFillColor(0);
@@ -136,9 +136,11 @@ void dmvio::OakdS2::start() {
             auto *motion = static_cast<dai::IMUData *>(frame.get());
             for (auto &imuPacket: motion->packets) {
                 imuInt.addAccData({imuPacket.acceleroMeter.x, imuPacket.acceleroMeter.y, imuPacket.acceleroMeter.z},
-                                  imuPacket.acceleroMeter.timestamp.sec);
+                                  std::chrono::duration_cast<std::chrono::milliseconds>(
+                                          imuPacket.acceleroMeter.timestamp.get().time_since_epoch()).count());
                 imuInt.addGyrData({imuPacket.gyroscope.x, imuPacket.gyroscope.y, imuPacket.gyroscope.z},
-                                  imuPacket.gyroscope.timestamp.sec);
+                                  std::chrono::duration_cast<std::chrono::milliseconds>(
+                                          imuPacket.gyroscope.timestamp.get().time_since_epoch()).count());
             }
         } else if (dynamic_cast<dai::ImgFrame *>(frame.get())) {
             auto *fs = static_cast<dai::ImgFrame *>(frame.get());
@@ -156,7 +158,7 @@ void dmvio::OakdS2::start() {
                 auto img = std::make_unique<dso::MinimalImageB>(mat.cols, mat.rows);
                 memcpy(img->data, mat.data, mat.rows * mat.cols);
                 // timestamp is in milliseconds, but shall be in seconds
-                double finalTimestamp = timestamp / 1000.0;
+                double finalTimestamp = timestamp;
                 // gets float exposure and double timestamp
                 std::unique_ptr<dso::ImageAndExposure> finalImage(undistorter->undistort<unsigned char>(
                         img.get(),
