@@ -205,9 +205,8 @@ int main(int argc, char **argv) {
     }
 
     std::cout << "Saving camera calibration to " << calibSavePath << "\n";
-    dmvio::OakdS2 oakdS2(frameContainer, calibSavePath, datasetSaver.get());
+    dmvio::OakdS2 oakdS2(frameContainer, calibSavePath, datasetSaver.get(),1500);
     oakdS2.start();
-
     std::string usedCalib = calibSavePath;
     if (mainSettings.calib != "") {
         usedCalib = mainSettings.calib;
@@ -237,14 +236,9 @@ int main(int argc, char **argv) {
     if (!disableAllDisplay) {
         IOWrap::PangolinDSOViewer *viewer = new IOWrap::PangolinDSOViewer(wG[0], hG[0], false, settingsUtil,
                                                                           normalizeCamSize);
-
-
         boost::thread runThread = boost::thread(boost::bind(run, viewer, undistorter.get()));
-
         viewer->run();
-
         delete viewer;
-
         // Make sure that the destructor of FullSystem, etc. finishes, so all log files are properly flushed.
         runThread.join();
     } else {
