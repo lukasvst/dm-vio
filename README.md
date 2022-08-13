@@ -22,87 +22,57 @@ When using this project in academic work, please consider citing:
 * **[Direct Sparse Visual-Inertial Odometry using Dynamic Marginalization](https://vision.in.tum.de/vi-dso)**, L. von Stumberg, V. Usenko and D. Cremers, In International Conference on Robotics and Automation (ICRA), 2018
 * **[Direct Sparse Odometry](https://vision.in.tum.de/dso)**, *J. Engel, V. Koltun, D. Cremers*, In  TPAMI, vol. 40, 2018
 
-### 2. Installation
+### 2. Installation from source
+This branch is the Windows port of DM-VIO. No Windows specific APIs were introduced during porting, only the standard library equivalents of the \*NIX APIs were used. It might still compile under Linux or MacOS, but I haven't verified either. It was only tested with Windows 10, Visual Studio 2019.
 
-	git clone https://github.com/lukasvst/dm-vio.git
+All dependecies (except for Pangolin) are gathered via Conan. They are listed in the conanfile.txt and all of them are available from the default conancenter repository. All following command line instructions are to be executed in Git Bash which comes with the official Windows Git installer. To install the dependencies, invoke conan from within the DM-VIO folder:
 
-The following instructions have been tested with Ubuntu 20.04.
-The system is also known to work well on Ubuntu 16.04, 18.04 and MacOS Big Sur (only Intel Macs have been tested so far).
+	git clone https://github.com/AltVanguard/dm-vio.git -b windows_support
+	cd dm-vio
+	mkdir conan
+	cd conan
+	conan install ..
 
-#### 2.1 Required Dependencies 
+##### Pangolin
+Like for DSO, [Pangolin](https://github.com/stevenlovegrove/Pangolin) is used for the GUI. Checkout Pangolin v0.6 to a separate folder (outside DM-VIO). Same process for conan dependencies:
 
-##### Suitesparse, Eigen3, Boost, yaml-cpp (required).
-Required, install with
-
-    sudo apt-get install cmake libsuitesparse-dev libeigen3-dev libboost-all-dev libyaml-cpp-dev
-
-On MacOS we recommend Homebrew to install the dependencies. It might be necessary
-to install boost@1.60 instead of the newest boost, in order for the used GTSAM version to work.
-
-
-##### GTSAM (required).
-Build from source with
-
-    sudo apt install libtbb-dev
-    git clone https://github.com/borglab/gtsam.git
-    cd gtsam
-    git checkout a738529af9754c7a085903f90ae8559bbaa82e75
-    mkdir build && cd build
-    cmake -DGTSAM_POSE3_EXPMAP=ON -DGTSAM_ROT3_EXPMAP=ON -DGTSAM_USE_SYSTEM_EIGEN=ON ..
-    make -j
-    sudo make install
-
-##### OpenCV.
-Used to read, write and display images.
-Install with
-
-	sudo apt-get install libopencv-dev
-
-
-##### Pangolin.
-Like for DSO, this is used for the GUI. You should install v0.6.
-Install from [https://github.com/stevenlovegrove/Pangolin](https://github.com/stevenlovegrove/Pangolin)
-
-
-	sudo apt install libgl1-mesa-dev libglew-dev pkg-config libegl1-mesa-dev libwayland-dev libxkbcommon-dev wayland-protocols
-	git clone https://github.com/stevenlovegrove/Pangolin.git
+	git clone https://github.com/AltVanguard/Pangolin.git -b v0.6
 	cd Pangolin
-	git checkout v0.6
-	mkdir build
-	cd build
-	cmake ..
-	cmake --build .
-	sudo make install
-	
-	 
-
-#### 2.2 Recommended Dependencies
-
-##### GTest (optional).
-For running tests, install with `git submodule update --init`.
-
-##### ziplib (optional).
-Used to read datasets with images as .zip.
-See [src/dso/README.md](src/dso/README.md) for instructions.
-
-##### sse2neon (required for ARM builds).
-After cloning, run `git submodule update --init` to include this. 
+	mkdir conan
+	cd conan
+	conan install ..
 
 #### 2.3 Build
+To build DM-VIO, you have to select installation folders for Pangolin and DM-VIO, then subsitute the folders into the following commands. I recommend not leaving the install folders as the default, and not installing the libraries under system folders or within the source repo folders. This avoids interference and you can easily restart from scratch if something goes wrong.
+
+Build and install Pangolin first:
+
+	cd Pangolin
+    mkdir build
+    cd build
+    cmake .. \
+		-DBUILD_EXAMPLES=OFF \
+		-DBUILD_TESTS=OFF \
+		-DBUILD_TOOLS=OFF \
+		-DDISPLAY_X11=OFF \
+		-DMSVC_USE_STATIC_CRT=OFF \
+		-DCMAKE_INSTALL_PREFIX=<pangolin install folder> \
+		-DCMAKE_MODULE_PATH=<pangolin repo folder>/conan/
+    # Here open the build/*.sln file, and build and install the solution from Visual Studio
+	
+Build DM-VIO:
 
     cd dm-vio
     mkdir build
     cd build
-    cmake ..
-    make -j
+    cmake .. \
+		-DCMAKE_INSTALL_PREFIX=<dm-vio install folder> \
+		-DCMAKE_PREFIX_PATH=<pangolin install folder> \
+		-DCMAKE_MODULE_PATH=<dm-vio repo folder>/conan/
+    # Here open the build/*.sln file, and build the solution from Visual Studio
 
 This compiles `dmvio_dataset` to run DM-VIO on datasets (needs both OpenCV and Pangolin installed).
-It also compiles the library `libdmvio.a`, which other projects can link to.
-
-#### Trouble-Shooting
-The project is based on DSO and only has two additional dependencies with GTSAM and yaml-cpp.
-In case of problems with compilation we recommend trying to compile https://github.com/JakobEngel/dso 
-first and seeing if it works. 
+It also compiles the DM-VIO static library, which other projects can link to.
 
 ### 3 Running
 Download a TUM-VI sequence (download in the format `Euroc / DSO 512x512`) at https://vision.in.tum.de/data/datasets/visual-inertial-dataset
