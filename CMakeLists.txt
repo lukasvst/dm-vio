@@ -137,7 +137,8 @@ if (Pangolin_FOUND)
 	include_directories( ${Pangolin_INCLUDE_DIRS} ) 
 	set(dso_pangolin_SOURCE_FILES
 			${DSO_SOURCE_DIR}/IOWrapper/Pangolin/KeyFrameDisplay.cpp
-			${DSO_SOURCE_DIR}/IOWrapper/Pangolin/PangolinDSOViewer.cpp)
+			${DSO_SOURCE_DIR}/IOWrapper/Pangolin/PangolinDSOViewer.cpp
+			${DSO_SOURCE_DIR}/IOWrapper/Pangolin/FollowCamMode.cpp)
 	set(HAS_PANGOLIN 1)
 else ()
 	message("--- could not find PANGOLIN, not compiling with pangolin library.")

@@ -930,7 +930,7 @@ void Undistort::readFromFile(const char* configFileName, int nPars, std::string 
 			if(ix == wOrg-1) ix = wOrg-1.001;
 			if(iy == hOrg-1) ix = hOrg-1.001;
 
-			if(ix > 0 && iy > 0 && ix < wOrg-1 &&  iy < wOrg-1)
+			if(ix > 0 && iy > 0 && ix < wOrg-1 &&  iy < hOrg-1)
 			{
 				remapX[x+y*w] = ix;
 				remapY[x+y*w] = iy;
