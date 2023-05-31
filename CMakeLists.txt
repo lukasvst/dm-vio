@@ -16,7 +16,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 # required libraries
 find_package(SuiteParse REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(Boost COMPONENTS system thread filesystem chrono serialization date_time timer)
+find_package(Boost COMPONENTS system thread filesystem chrono serialization date_time timer regex)
 find_package(GTSAM REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
@@ -24,8 +24,8 @@ find_package(realsense2 QUIET)
 
 IF(${Boost_VERSION} GREATER_EQUAL 106500)
     message("Building with stacktrace support.")
-	set(STACKTRACE_LIBRARIES dl)
-	set(STACKTRACE_DEFINES "-DSTACKTRACE -DBOOST_STACKTRACE_USE_ADDR2LINE")
+        set(STACKTRACE_LIBRARIES dl)
+        set(STACKTRACE_DEFINES "-DSTACKTRACE -DBOOST_STACKTRACE_USE_ADDR2LINE")
 ENDIF()
 
 # optional libraries
