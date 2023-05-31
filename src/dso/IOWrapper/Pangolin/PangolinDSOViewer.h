@@ -32,6 +32,7 @@
 #include <map>
 #include <deque>
 #include "util/SettingsUtil.h"
+#include "FollowCamMode.h"
 
 
 namespace dmvio
@@ -159,6 +160,7 @@ private:
 	void updateDisplayedCamPose();
     std::shared_ptr<double> normalizeCamSize;
 
+    FollowCamMode followCam;
 
 	std::shared_ptr<dmvio::SettingsUtil> settingsUtil;
 };

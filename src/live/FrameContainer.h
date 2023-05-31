@@ -75,7 +75,7 @@ public:
     // Retrieve the newest image and corresponding IMU data.
     // Will wait until a new image arrives if no image is in the queue.
     // If there is more than one image in the queue it will skip maxSkipFrames (if maxSkipFrames is >= 0).
-    // If maxSkipFrames it will always skip to the newest image.
+    // If maxSkipFrames == -1 it will always skip to the newest image.
     std::pair<std::unique_ptr<dso::ImageAndExposure>, IMUData> getImageAndIMUData(int maxSkipFrames = -1);
 
     // Returns the number of images in the queue.
