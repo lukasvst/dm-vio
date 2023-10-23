@@ -15,7 +15,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # required libraries
 find_package(SuiteParse REQUIRED)
-find_package(Eigen3 REQUIRED)
+#find_package(Eigen3 REQUIRED)
 find_package(Boost COMPONENTS system thread filesystem chrono serialization date_time timer)
 find_package(GTSAM REQUIRED)
 find_package(yaml-cpp REQUIRED)
