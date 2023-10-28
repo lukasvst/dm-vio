@@ -330,6 +330,14 @@ void run(ImageFolderReader* reader, IOWrap::PangolinDSOViewer* viewer)
         tmlog.close();
     }
 
+    if (!isPCLfileClose)
+    {            
+        ((IOWrap::SampleOutputWrapper*)fullSystem->outputWrapper[1])->pclFile.flush();
+        ((IOWrap::SampleOutputWrapper*)fullSystem->outputWrapper[1])->pclFile.close();
+        isPCLfileClose = true;
+        printf("pcl tmp file is auto closed.\n");
+    }
+
     for(IOWrap::Output3DWrapper* ow : fullSystem->outputWrapper)
     {
         ow->join();

@@ -15,7 +15,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # required libraries
 find_package(SuiteParse REQUIRED)
-find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(Eigen3 REQUIRED)
 find_package(Boost COMPONENTS system thread filesystem chrono serialization date_time timer)
 find_package(GTSAM REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -130,7 +130,6 @@ include_directories(
   ${GTSAM_INCLUDE_DIR}
 ) 
 
-
 # decide if we have pangolin
 if (Pangolin_FOUND)
 	message("--- found PANGOLIN, compiling with pangolin library.")
@@ -197,11 +196,13 @@ if (OpenCV_FOUND AND Pangolin_FOUND)
 		message("--- compiling dmvio_t265.")
 		set(dmvio_t265_SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/live/RealsenseT265.cpp)
 		add_executable(dmvio_t265 ${PROJECT_SOURCE_DIR}/src/main_dmvio_t265.cpp ${dmvio_t265_SOURCE_FILES})
-		target_link_libraries(dmvio_t265 dmvio ${DMVIO_LINKED_LIBRARIES} realsense2::realsense2)
+		target_link_libraries(dmvio_t265 dmvio ${DMVIO_LINKED_LIBRARIES}  realsense2::realsense2)
 	endif()
 
 else()
 	message("--- not building dmvio_dataset, since either don't have openCV or Pangolin.")
 endif()
 
+
+#add_definitions(${PCL_DEFINITIONS})
 add_subdirectory(test)
