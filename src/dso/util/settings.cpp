@@ -231,6 +231,13 @@ bool setting_debugout_runquiet = false;
 
 int sparsityFactor = 5;	// not actually a setting, only some legacy stuff for coarse initializer.
 
+int numPCL = 0;
+bool isSavePCL = true;
+bool isWritePCL = false;
+bool isPCLfileClose = false;
+std::string strTmpFileName = "pcl_data_tmp.pcd";
+std::string strSaveFileName = "pcl_data.pcd";
+
 
 void handleKey(char k)
 {

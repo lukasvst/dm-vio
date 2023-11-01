@@ -186,8 +186,10 @@ void KeyFrameDisplay::setFromKF(FrameHessian* fh, CalibHessian* HCalib)
 
 KeyFrameDisplay::~KeyFrameDisplay()
 {
+    
 	if(originalInputSparse != 0)
 		delete[] originalInputSparse;
+		
 }
 
 bool KeyFrameDisplay::refreshPC(bool canRefresh, float scaledTH, float absTH, int mode, float minBS, int sparsity)
@@ -220,7 +222,7 @@ bool KeyFrameDisplay::refreshPC(bool canRefresh, float scaledTH, float absTH, in
 	Vec3f* tmpVertexBuffer = new Vec3f[numSparsePoints*patternNum];
 	Vec3b* tmpColorBuffer = new Vec3b[numSparsePoints*patternNum];
 	int vertexBufferNumPoints=0;
-
+    
 	for(int i=0;i<numSparsePoints;i++)
 	{
 		/* display modes:
@@ -261,8 +263,6 @@ bool KeyFrameDisplay::refreshPC(bool canRefresh, float scaledTH, float absTH, in
 			tmpVertexBuffer[vertexBufferNumPoints][0] = ((originalInputSparse[i].u+dx)*fxi + cxi) * depth;
 			tmpVertexBuffer[vertexBufferNumPoints][1] = ((originalInputSparse[i].v+dy)*fyi + cyi) * depth;
 			tmpVertexBuffer[vertexBufferNumPoints][2] = depth*(1 + 2*fxi * (rand()/(float)RAND_MAX-0.5f));
-
-
 
 			if(my_displayMode==0)
 			{
@@ -331,11 +331,8 @@ bool KeyFrameDisplay::refreshPC(bool canRefresh, float scaledTH, float absTH, in
 	delete[] tmpColorBuffer;
 	delete[] tmpVertexBuffer;
 
-
 	return true;
 }
-
-
 
 void KeyFrameDisplay::drawCam(float lineWidth, float* color, float sizeFactor)
 {

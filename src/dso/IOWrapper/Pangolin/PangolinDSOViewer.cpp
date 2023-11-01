@@ -158,6 +158,7 @@ void PangolinDSOViewer::run()
 
 	pangolin::Var<bool> settings_resetButton("ui.Reset",false,false);
 
+    pangolin::Var<bool> settings_savePCButton("ui.savePointCloud",false,false);
 
 	pangolin::Var<int> settings_nPts("ui.activePoints",setting_desiredPointDensity, 50,5000, false);
 	pangolin::Var<int> settings_nCandidates("ui.pointCandidates",setting_desiredImmatureDensity, 50,5000, false);
@@ -343,6 +344,61 @@ void PangolinDSOViewer::run()
 	    	settings_resetButton.Reset();
 	    	setting_fullResetRequested = true;
 	    }
+
+        if(settings_savePCButton.Get())
+        {
+            printf("Saving [%d] Point Cloud Data....\n", numPCL);
+            settings_savePCButton.Reset();
+
+            while (1)
+            {
+                if (!isWritePCL)
+                {
+                    isSavePCL = false;
+                    break;
+                }
+
+                boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
+            }
+
+
+            while (1)
+            {
+                if (isPCLfileClose)
+                {
+                    std::ofstream finalFile(strSaveFileName);
+                    finalFile << std::string("# .PCD v.6 - Point Cloud Data file format\n");
+                    finalFile << std::string("FIELDS x y z\n");
+                    finalFile << std::string("SIZE 4 4 4\n");
+                    finalFile << std::string("TYPE F F F\n");
+                    finalFile << std::string("COUNT 1 1 1\n");
+                    finalFile << std::string("WIDTH ") << numPCL << std::string("\n");
+                    finalFile << std::string("HEIGHT 1\n");
+                    finalFile << std::string("#VIEWPOINT 0 0 0 1 0 0 0\n");
+                    finalFile << std::string("POINTS ") << numPCL << std::string("\n");
+                    finalFile << std::string("DATA ascii\n");
+
+                    std::ifstream savedFile(strTmpFileName);
+
+                    while (!savedFile.eof())
+                    {                        
+                        finalFile.put(savedFile.get());                        
+                    }
+
+                    finalFile.close();
+                    savedFile.close();
+
+                    printf("PCL File for 'pcl_data.pcd' is saved.\n");
+
+                    break;
+                }
+
+                boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
+            }
+
+
+        }
+
 
 		// Swap frames and Process Events
 		pangolin::FinishFrame();
