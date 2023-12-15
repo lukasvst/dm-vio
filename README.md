@@ -18,6 +18,7 @@ When using this project in academic work, please consider citing:
     }
 
 ## New: ROS version and Live demo for Realsense cameras
+* **Update May 23, 2023**: The ROS wrapper now supports running DM-VIO directly on rosbags, see [here](https://github.com/lukasvst/dm-vio-ros#new-now-you-can-also-run-in-non-realtime-mode-on-rosbags). This will run in non-realtime mode, but in practice it is usually much faster than real-time.
 * **Update Jun 22, 2022**: There is a ROS wrapper for DM-VIO, available at https://github.com/lukasvst/dm-vio-ros
 * **Update Jun 15, 2022**: Now there is a live demo for Realsense cameras. See [doc/RealsenseLiveVersion.md](doc/RealsenseLiveVersion.md) for details. The page also contains interesting tips for improving performance on custom datasets.
   * Note that it's not possible anymore to pass IMU noise values with the `camchain.yaml`, you need to use the `settings.yaml` file or commandline args.
@@ -51,14 +52,14 @@ Build from source with
     sudo apt install libtbb-dev
     git clone https://github.com/borglab/gtsam.git
     cd gtsam
-    git checkout 4.2a6          # not strictly necessary but this is the version tested with.
+    git checkout 4.2a6          # newer gtsam versions might not work.
     mkdir build && cd build
     cmake -DGTSAM_POSE3_EXPMAP=ON -DGTSAM_ROT3_EXPMAP=ON -DGTSAM_USE_SYSTEM_EIGEN=ON -DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF ..
     make -j
     sudo make install
 
-(Note: It seems like the keyframe operations are 2-3% slower with the new GTSAM version. To reproduce the realtime paper 
-results you should use commit `a738529af9754c7a085903f90ae8559bbaa82e75` of GTSAM).
+(Note: It seems like the keyframe operations are 2-3% slower with this GTSAM version compared to an older commit. To 
+reproduce the realtime paper results you should use commit `a738529af9754c7a085903f90ae8559bbaa82e75` of GTSAM).
 
 ##### OpenCV.
 Used to read, write and display images.

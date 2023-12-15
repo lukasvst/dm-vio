@@ -177,6 +177,8 @@ void PangolinDSOViewer::run()
         settingsUtil->createPangolinSettings();
     }
 
+    followCam.createPangolinSettings();
+
 
     // Default hooks for exiting (Esc) and fullscreen (tab).
 	while(running)
@@ -188,9 +190,14 @@ void PangolinDSOViewer::run()
 		{
             double sizeFactor = 1.0;
 
+            // I need model3DMutex lock before I get currentCam->camToWorld.
+            boost::unique_lock<boost::mutex> lk3d(model3DMutex);
+
+            auto updatedVisualization3DCam = followCam.updateVisualizationCam(currentCam->camToWorld,
+                                                                         Visualization3D_camera);
+
 			// Activate efficiently by object
-			Visualization3D_display.Activate(Visualization3D_camera);
-			boost::unique_lock<boost::mutex> lk3d(model3DMutex);
+            Visualization3D_display.Activate(*updatedVisualization3DCam);
 
             // Normalize cam size with scale.
             if(transformDSOToIMU && normalizeCamSize && *normalizeCamSize > 0)
