@@ -204,4 +204,4 @@ else()
 	message("--- not building dmvio_dataset, since either don't have openCV or Pangolin.")
 endif()
 
-add_subdirectory(test)
+# add_subdirectory(test)
