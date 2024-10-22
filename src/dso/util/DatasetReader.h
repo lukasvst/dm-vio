@@ -107,10 +107,11 @@ struct PrepImageItem
 class ImageFolderReader
 {
 public:
-	ImageFolderReader(std::string path, std::string calibFile, std::string gammaFile, std::string vignetteFile, bool use16BitPassed)
+	ImageFolderReader(std::string path, std::string calibFile, std::string gammaFile, std::string vignetteFile, bool use16BitPassed, std::string tsFile="")
 	{
 		this->path = path;
 		this->calibfile = calibFile;
+		this->tsFile = tsFile;
 		use16Bit = use16BitPassed;
 
 #if HAS_ZIPLIB
@@ -519,8 +520,14 @@ private:
 	inline void loadTimestamps()
 	{
 		std::ifstream tr;
-		std::string timesFile = path.substr(0,path.find_last_of('/')) + "/times.txt";
-		tr.open(timesFile.c_str());
+		std::string defaultFile = path.substr(0, path.find_last_of('/')) + "/times.txt";
+
+		if(this->tsFile == "")
+		{
+			this->tsFile = defaultFile;
+		}
+
+		tr.open(this->tsFile.c_str());
 		while(!tr.eof() && tr.good())
 		{
 			std::string line;
@@ -596,6 +603,7 @@ private:
 
 	std::string path;
 	std::string calibfile;
+	std::string tsFile;
 
 	bool isZipped;
 	bool use16Bit;
