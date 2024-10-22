@@ -55,6 +55,7 @@
 #include "IOWrapper/OutputWrapper/SampleOutputWrapper.h"
 
 std::string gtFile = "";
+std::string tsFile = "";
 std::string source = "";
 std::string imuFile = "";
 
@@ -369,6 +370,7 @@ int main(int argc, char** argv)
     settingsUtil->registerArg("end", end);
     settingsUtil->registerArg("imuFile", imuFile);
     settingsUtil->registerArg("gtFile", gtFile);
+    settingsUtil->registerArg("tsFile", tsFile);
     settingsUtil->registerArg("sampleoutput", useSampleOutput);
     settingsUtil->registerArg("reverse", reverse);
     settingsUtil->registerArg("use16Bit", use16Bit);
@@ -394,7 +396,7 @@ int main(int argc, char** argv)
     // hook crtl+C.
     boost::thread exThread = boost::thread(exitThread);
 
-    ImageFolderReader* reader = new ImageFolderReader(source, mainSettings.calib, mainSettings.gammaCalib, mainSettings.vignette, use16Bit);
+    ImageFolderReader* reader = new ImageFolderReader(source, mainSettings.calib, mainSettings.gammaCalib, mainSettings.vignette, use16Bit, tsFile);
     reader->loadIMUData(imuFile);
     reader->setGlobalCalibration();
 

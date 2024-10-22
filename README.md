@@ -125,6 +125,7 @@ Download a TUM-VI sequence (download in the format `Euroc / DSO 512x512`) at htt
         vignette=XXXX/datasetXXXX/dso/cam0/vignette.png
         imuFile=XXXX/datasetXXXX/dso/imu.txt
         gtFile=XXXX/datasetXXXX/dso/gt_imu.csv
+        tsFile=XXXX/datasetXXXX/dso/cam0/times.txt
         calib=PATH_TO_DMVIO/configs/tumvi_calib/camera02.txt
         gamma=PATH_TO_DMVIO/configs/tumvi_calib/pcalib.txt
         imuCalib=PATH_TO_DMVIO/configs/tumvi_calib/camchain.yaml
@@ -165,8 +166,9 @@ To run on your own dataset you need
 * an accurate camera calibration! For tips on calibration and the format of camera.txt see 
 [src/dso/README.md](src/dso/README.md).
 * to set the `mode=1` unless you have a photometric calibration (vignette.png and pcalib.txt).
-* a file times.txt which contains **exactly** one timestamp for each image in the image folder. Note that this file 
-  contains the timestamp twice, first in nanoseconds and then in seconds.
+* a file times.txt which contains **exactly** one timestamp for each image in
+  the image folder, or specified through the `tsFile` parameter. Note that this
+  file contains the timestamp twice, first in nanoseconds and then in seconds.
 
 When enabling IMU data you also need
 
