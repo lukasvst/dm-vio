@@ -159,5 +159,17 @@ public:
 
 };
 
+class UndistortDS : public Undistort
+{
+public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    UndistortDS(const char* configFileName, bool noprefix);
+	~UndistortDS();
+	void distortCoordinates(float* in_x, float* in_y, float* out_x, float* out_y, int n) const;
+
+private:
+	float inputCalibration[8];
+};
+
 }
 

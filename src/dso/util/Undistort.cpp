@@ -362,6 +362,14 @@ Undistort* Undistort::getUndistorterForFile(std::string configFilename, std::str
         if(!u->isValid()) {delete u; return 0; }
     }
 
+	else if(std::sscanf(l1.c_str(), "DS %f %f %f %f %f %f",
+            &ic[0], &ic[1], &ic[2], &ic[3],
+            &ic[4], &ic[5]) == 6)
+    {
+        u = new UndistortDS(configFilename.c_str(), false);
+        if(!u->isValid()) {delete u; return 0; }
+    }
+
 
     else
     {
@@ -1232,5 +1240,84 @@ void UndistortPinhole::distortCoordinates(float* in_x, float* in_y, float* out_x
 	}
 }
 
+
+
+UndistortDS::UndistortDS(const char* configFileName, bool noprefix)
+{
+    printf("Creating DS undistorter\n");
+
+    if(noprefix)
+        readFromFile(configFileName, 6);
+    else
+        readFromFile(configFileName, 6,"DS ");
+}
+UndistortDS::~UndistortDS()
+{
+}
+
+void UndistortDS::distortCoordinates(float* in_x, float* in_y, float* out_x, float* out_y, int n) const
+{
+    // DS
+    float fx = parsOrg[0];
+    float fy = parsOrg[1];
+    float cx = parsOrg[2];
+    float cy = parsOrg[3];
+
+    float xi = parsOrg[4];
+    float alpha = parsOrg[5];
+
+    float ofx = K(0,0);
+    float ofy = K(1,1);
+    float ocx = K(0,2);
+    float ocy = K(1,2);
+
+
+
+    for(int i=0;i<n;i++)
+    {
+        float x = in_x[i];
+        float y = in_y[i];
+
+
+		//Double Sphere DS
+		float ix = (x - ocx) / ofx;
+        float iy = (y - ocy) / ofy;
+		float xx = ix * ix;
+		float yy = iy * iy;
+		float zz = 1 * 1;
+
+		float r2 = xx + yy;
+
+		float d1_2 = r2 + zz;
+		float d1 = sqrt(d1_2);
+
+		float w1 = alpha > (0.5) ? ((1) - alpha) / alpha
+											: alpha / ((1) - alpha);
+		float w2 =
+			(w1 + xi) / sqrt((2) * w1 * xi + xi * xi + (1));
+
+		const bool is_valid = (z > -w2 * d1);
+
+		float k = xi * d1 + z;
+		float kk = k * k;
+
+		float d2_2 = r2 + kk;
+		float d2 = sqrt(d2_2);
+
+		float norm = alpha * d2 + ((1) - alpha) * k;
+
+		float mx = x / norm;
+		float my = y / norm;
+
+		float ox = fx * mx + cx;
+		float oy = fy * my + cy;
+
+		out_x[i] = ox;
+        out_y[i] = oy;
+
+    }
+
+
+}
 
 }
